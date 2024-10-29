@@ -1,7 +1,5 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const prisma = new client_1.PrismaClient();
+import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client';
+const prisma = new PrismaClient();
 class TransactionController {
     /**
      * Effectue un dépôt d'argent sur un portefeuille
@@ -50,8 +48,8 @@ class TransactionController {
                     const newTransaction = await tx.transaction.create({
                         data: {
                             amount,
-                            type: client_1.TransactionType.DEPOSIT,
-                            status: client_1.TransactionStatus.SUCCESS,
+                            type: TransactionType.DEPOSIT,
+                            status: TransactionStatus.SUCCESS,
                             compteId: Number(compteId),
                             agentId: Number(agentId),
                             porteFeuilleId: porteFeuille.id
@@ -152,8 +150,8 @@ class TransactionController {
                     const newTransaction = await tx.transaction.create({
                         data: {
                             amount,
-                            type: client_1.TransactionType.WITHDRAW,
-                            status: client_1.TransactionStatus.SUCCESS,
+                            type: TransactionType.WITHDRAW,
+                            status: TransactionStatus.SUCCESS,
                             compteId: Number(compteId),
                             agentId: Number(agentId),
                             porteFeuilleId: porteFeuille.id
@@ -247,8 +245,8 @@ class TransactionController {
             // Calcul des statistiques
             const stats = {
                 totalTransactions: transactions.length,
-                totalDeposits: transactions.filter(t => t.type === client_1.TransactionType.DEPOSIT).length,
-                totalWithdrawals: transactions.filter(t => t.type === client_1.TransactionType.WITHDRAW).length,
+                totalDeposits: transactions.filter(t => t.type === TransactionType.DEPOSIT).length,
+                totalWithdrawals: transactions.filter(t => t.type === TransactionType.WITHDRAW).length,
                 totalAmount: transactions.reduce((sum, t) => sum + t.amount, 0)
             };
             res.status(200).json({
@@ -288,7 +286,7 @@ class TransactionController {
                 return;
             }
             // Vérification que la transaction n'est pas déjà annulée
-            if (transaction.status === client_1.TransactionStatus.FAILED) {
+            if (transaction.status === TransactionStatus.FAILED) {
                 res.status(400).json({
                     success: false,
                     message: 'Cette transaction est déjà annulée'
@@ -298,7 +296,7 @@ class TransactionController {
             try {
                 const result = await prisma.$transaction(async (tx) => {
                     // Mise à jour du solde du portefeuille
-                    const updatedBalance = transaction.type === client_1.TransactionType.DEPOSIT
+                    const updatedBalance = transaction.type === TransactionType.DEPOSIT
                         ? transaction.porteFeuille.balance - transaction.amount // Annulation d'un dépôt
                         : transaction.porteFeuille.balance + transaction.amount; // Annulation d'un retrait
                     // Mise à jour du portefeuille
@@ -310,7 +308,7 @@ class TransactionController {
                     const updatedTransaction = await tx.transaction.update({
                         where: { id: Number(transactionId) },
                         data: {
-                            status: client_1.TransactionStatus.FAILED
+                            status: TransactionStatus.FAILED
                         }
                     });
                     // Création d'une notification
@@ -367,19 +365,19 @@ class TransactionController {
             const stats = {
                 totalTransactions: transactions.length,
                 deposits: {
-                    count: transactions.filter(t => t.type === client_1.TransactionType.DEPOSIT).length,
+                    count: transactions.filter(t => t.type === TransactionType.DEPOSIT).length,
                     total: transactions
-                        .filter(t => t.type === client_1.TransactionType.DEPOSIT)
+                        .filter(t => t.type === TransactionType.DEPOSIT)
                         .reduce((sum, t) => sum + t.amount, 0)
                 },
                 withdrawals: {
-                    count: transactions.filter(t => t.type === client_1.TransactionType.WITHDRAW).length,
+                    count: transactions.filter(t => t.type === TransactionType.WITHDRAW).length,
                     total: transactions
-                        .filter(t => t.type === client_1.TransactionType.WITHDRAW)
+                        .filter(t => t.type === TransactionType.WITHDRAW)
                         .reduce((sum, t) => sum + t.amount, 0)
                 },
-                successfulTransactions: transactions.filter(t => t.status === client_1.TransactionStatus.SUCCESS).length,
-                failedTransactions: transactions.filter(t => t.status === client_1.TransactionStatus.FAILED).length
+                successfulTransactions: transactions.filter(t => t.status === TransactionStatus.SUCCESS).length,
+                failedTransactions: transactions.filter(t => t.status === TransactionStatus.FAILED).length
             };
             res.status(200).json({
                 success: true,
@@ -396,4 +394,4 @@ class TransactionController {
         }
     }
 }
-exports.default = TransactionController;
+export default TransactionController;

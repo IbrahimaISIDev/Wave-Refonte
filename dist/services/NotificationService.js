@@ -1,17 +1,10 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationService = void 0;
 // src/services/NotificationService.ts
-const client_1 = require("@prisma/client");
-const twilio_1 = __importDefault(require("twilio"));
-const prisma = new client_1.PrismaClient();
+import { PrismaClient } from "@prisma/client";
+import twilio from "twilio";
+const prisma = new PrismaClient();
 // Configuration Twilio
-const twilioClient = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-class NotificationService {
-    io;
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+export class NotificationService {
     constructor(io) {
         this.io = io;
         // Gestion des événements Socket.IO
@@ -100,4 +93,3 @@ class NotificationService {
         }
     }
 }
-exports.NotificationService = NotificationService;

@@ -1,21 +1,14 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.CompteService = void 0;
 // src/services/CompteService.ts
-const client_1 = require("@prisma/client");
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const dotenv_1 = __importDefault(require("dotenv"));
-const twilio_1 = __importDefault(require("twilio"));
-dotenv_1.default.config();
-const prisma = new client_1.PrismaClient();
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from 'dotenv';
+import twilio from 'twilio';
+dotenv.config();
+const prisma = new PrismaClient();
 // Configuration Twilio
-const twilioClient = (0, twilio_1.default)(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-class CompteService {
-    io;
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+export class CompteService {
     constructor(io) {
         this.io = io;
     }
@@ -35,8 +28,8 @@ class CompteService {
             throw new Error("Ce numéro de téléphone est déjà utilisé");
         }
         // Hashage du mot de passe
-        const salt = await bcrypt_1.default.genSalt(10);
-        const hashedPassword = await bcrypt_1.default.hash(password, salt);
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
         // Transaction Prisma pour création synchronisée
         const result = await prisma.$transaction(async (prisma) => {
             // Création du compte
@@ -93,7 +86,7 @@ class CompteService {
         }
     }
     generateToken(userId) {
-        return jsonwebtoken_1.default.sign({ userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "24h" });
+        return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "24h" });
     }
     async updateCompteStatus(compteId, status) {
         const updatedCompte = await prisma.compte.update({
@@ -129,4 +122,3 @@ class CompteService {
         }
     }
 }
-exports.CompteService = CompteService;

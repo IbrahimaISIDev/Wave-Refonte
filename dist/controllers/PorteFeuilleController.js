@@ -1,13 +1,8 @@
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
-const utils_js_1 = __importDefault(require("../utils/utils.js"));
-const console_1 = require("console");
-const prisma = new client_1.PrismaClient();
-class PorteFeuilleController {
+import { PrismaClient } from '@prisma/client';
+import utils from '../utils/utils.js';
+import { error } from 'console';
+const prisma = new PrismaClient();
+export default class PorteFeuilleController {
     static async createWallet(req, res) {
         const { compteId } = req.body;
         // Vérification de la présence de l'ID de compte
@@ -35,7 +30,7 @@ class PorteFeuilleController {
                     isActive: false
                 }
             });
-            const code = utils_js_1.default.generateRandomCode(5);
+            const code = utils.generateRandomCode(5);
             await prisma.activation.create({
                 data: {
                     porteFeuilleId: wallet.id, // Corrected property name
@@ -258,7 +253,7 @@ class PorteFeuilleController {
                 throw new Error("Portefeuille non trouvé");
             }
             await this.verifyCodeExpiration(req.body.portefeuilleId);
-            const code = utils_js_1.default.generateRandomCode(5);
+            const code = utils.generateRandomCode(5);
             await prisma.activation.create({
                 data: {
                     porteFeuilleId: req.body.portefeuilleId,
@@ -334,7 +329,7 @@ class PorteFeuilleController {
             if (!portefeuille) {
                 throw new Error("Portefeuille non trouvé");
             }
-            if (!utils_js_1.default.comparePassword(secretCode, portefeuille.compte.password)) {
+            if (!utils.comparePassword(secretCode, portefeuille.compte.password)) {
                 throw new Error("Code secret invalide");
             }
             if (portefeuille.isActive) {
@@ -351,9 +346,8 @@ class PorteFeuilleController {
             });
         }
         catch {
-            console.error(console_1.error);
-            return res.status(500).json({ message: "Erreur lors de l'ouverture du portefeuille", error: console_1.error instanceof Error ? console_1.error.message : "Erreur inconnue" });
+            console.error(error);
+            return res.status(500).json({ message: "Erreur lors de l'ouverture du portefeuille", error: error instanceof Error ? error.message : "Erreur inconnue" });
         }
     }
 }
-exports.default = PorteFeuilleController;
