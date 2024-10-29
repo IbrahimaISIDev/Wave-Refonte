@@ -3,7 +3,7 @@
     /* Language and Environment */
     "target": "ES2020",
     "lib": ["es6", "dom", "esnext"],
-    
+
     /* Modules */
     "module": "ES2020",
     "moduleResolution": "node",
@@ -13,8 +13,7 @@
       "*": ["src/types/*"]
     },
     "typeRoots": [
-      "node_modules/@types",
-      "src/types"
+      "node_modules/@types"
     ],
     "types": ["node"],
 
