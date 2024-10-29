@@ -1,6 +1,6 @@
 // src/controllers/CompteController.ts
 import { Request, Response } from "express";
-import { CompteService } from "../services/CompteService";
+import { CompteService } from "../services/CompteService.js";
 import { Server as SocketServer } from "socket.io";
 
 class CompteController {

@@ -2,7 +2,7 @@
   "name": "waveconnect",
   "type": "module",
   "version": "1.0.0",
-  "main": "dist/applications/app.js",
+  "main": "dist/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx nodemon dist/applications/app.js",

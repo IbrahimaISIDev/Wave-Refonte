@@ -2,7 +2,9 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import twilio from "twilio";
+import dotenv from 'dotenv';
+import twilio from 'twilio';
+dotenv.config();
 const prisma = new PrismaClient();
 // Configuration Twilio
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);

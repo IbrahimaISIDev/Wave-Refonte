@@ -2,8 +2,11 @@
 import { PrismaClient, Role, Compte } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import twilio from "twilio";
+import dotenv from 'dotenv';
+import twilio from 'twilio';
 import { Server as SocketServer } from "socket.io";
+
+dotenv.config();
 
 const prisma = new PrismaClient();
 
