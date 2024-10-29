@@ -16,7 +16,7 @@
       "node_modules/@types",
       "src/types"
     ],
-    "types": ["node"],
+    "type": ["node"],
 
     /* Emit */
     "outDir": "./dist",
