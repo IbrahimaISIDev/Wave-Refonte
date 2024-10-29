@@ -5,14 +5,19 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node dist/app.js",  
+    "start": "node dist/app.js",
     "dev": "ts-node --esm src/app.ts",
     "build": "tsc",
     "migrate": "npx prisma migrate dev --name init",
     "clean": "rm -rf dist"
   },
-  "keywords": ["wave", "connect", "express", "typescript"], 
-  "author": "Ibrahima ISIDev", 
+  "keywords": [
+    "wave",
+    "connect",
+    "express",
+    "typescript"
+  ],
+  "author": "Ibrahima ISIDev",
   "license": "ISC",
   "description": "A TypeScript project for wave connection using Express and Prisma.",
   "dependencies": {
