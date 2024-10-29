@@ -5,8 +5,8 @@
     "lib": ["es6", "dom", "esnext"],
 
     /* Modules */
-    "module": "ES2020",
-    "moduleResolution": "node",
+    "module": "NodeNext",        // Changé pour une meilleure compatibilité avec Node.js
+    "moduleResolution": "NodeNext", // Changé pour correspondre au module
     "rootDir": "./src",
     "baseUrl": "./",
     "paths": {
@@ -36,8 +36,8 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
+    "noUnusedLocals": false,     // Gardé à false pour le développement
+    "noUnusedParameters": false, // Gardé à false pour le développement
     "noImplicitReturns": true,
 
     /* Completeness */

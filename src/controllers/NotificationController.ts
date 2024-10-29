@@ -1,8 +1,7 @@
 // src/controllers/NotificationController.ts
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { NotificationService } from "../services/NotificationService";
-
+import { NotificationService } from "../services/NotificationService.js"; // Ajout de .js
 const prisma = new PrismaClient();
 
 class NotificationController {

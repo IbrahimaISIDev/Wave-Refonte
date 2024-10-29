@@ -1,4 +1,5 @@
-import { Operateur } from './../../node_modules/.prisma/client/index.d';
+// src/routes/OperateurRoute.ts
+import { PrismaClient, Operateur } from "@prisma/client"; // Correction de l'import
 import { Router } from "express";
 import OperateurController from "../controllers/OperateurController.js";
 import Middleware from '../middlewares/midlleware.js';
