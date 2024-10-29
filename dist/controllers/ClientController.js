@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { uploadImage } from "../utils/upload.utils.js";
 const prisma = new PrismaClient();
 class ClientController {
-    // Get all clients with their user accounts
     static async getAllClients(req, res) {
         try {
             const clients = await prisma.client.findMany({
@@ -34,7 +33,6 @@ class ClientController {
             });
         }
     }
-    // Get client by ID
     static async getClientById(req, res) {
         try {
             const { id } = req.params;
@@ -72,7 +70,6 @@ class ClientController {
             });
         }
     }
-    // Get client by compteId
     static async getClientByCompteId(req, res) {
         try {
             const { compteId } = req.params;
@@ -110,16 +107,14 @@ class ClientController {
             });
         }
     }
-    // Create new client with Cloudinary integration
     static async createClient(req, res) {
         try {
             const { compteId } = req.body;
-            const photoFile = req.file; // Assuming you're using multer for file upload
+            const photoFile = req.file;
             if (!photoFile) {
                 res.status(400).json({ message: "Photo requise" });
                 return;
             }
-            // Vérifier si le compte existe et est de type CLIENT
             const compte = await prisma.compte.findUnique({
                 where: { id: Number(compteId) },
             });
@@ -131,9 +126,7 @@ class ClientController {
                 res.status(400).json({ message: "Le compte doit être de type CLIENT" });
                 return;
             }
-            // Upload image to Cloudinary
             const cloudinaryResponse = await uploadImage(photoFile.path);
-            // Create client with Cloudinary URL
             const newClient = await prisma.client.create({
                 data: {
                     compteId: Number(compteId),
@@ -156,7 +149,6 @@ class ClientController {
             });
         }
     }
-    // Update client
     static async updateClient(req, res) {
         try {
             const { id } = req.params;
@@ -165,7 +157,6 @@ class ClientController {
                 res.status(400).json({ message: "Photo requise" });
                 return;
             }
-            // Upload new image to Cloudinary
             const cloudinaryResponse = await uploadImage(photoFile.path);
             const updatedClient = await prisma.client.update({
                 where: { id: Number(id) },
@@ -191,3 +182,4 @@ class ClientController {
     }
 }
 export default ClientController;
+//# sourceMappingURL=ClientController.js.map

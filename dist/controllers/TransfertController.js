@@ -1,13 +1,9 @@
 import { PrismaClient, TransfertStatus } from '@prisma/client';
 const prisma = new PrismaClient();
 class TransfertController {
-    /**
-     * Crée un nouveau transfert entre deux comptes
-     */
     static async createTransfert(req, res) {
         try {
             const { senderId, receiverId, amount } = req.body;
-            // Validation des entrées
             if (!senderId || !receiverId || !amount || amount <= 0) {
                 res.status(400).json({
                     success: false,
@@ -15,7 +11,6 @@ class TransfertController {
                 });
                 return;
             }
-            // Vérification des comptes
             const sender = await prisma.compte.findUnique({
                 where: { id: Number(senderId) },
                 include: { porteFeuille: true }
@@ -38,7 +33,6 @@ class TransfertController {
                 });
                 return;
             }
-            // Vérifications supplémentaires
             if (!sender.porteFeuille || sender.status !== 'ACTIVE') {
                 res.status(400).json({
                     success: false,
@@ -53,7 +47,6 @@ class TransfertController {
                 });
                 return;
             }
-            // Calcul des frais (0.5% du montant)
             const frais = amount * 0.005;
             const totalAmount = amount + frais;
             if (sender.porteFeuille.balance < totalAmount) {
@@ -66,19 +59,15 @@ class TransfertController {
                 });
                 return;
             }
-            // Transaction atomique
             const transfert = await prisma.$transaction(async (prisma) => {
-                // Débit du compte expéditeur
                 await prisma.porteFeuille.update({
                     where: { id: sender.porteFeuille?.id },
                     data: { balance: { decrement: totalAmount } }
                 });
-                // Crédit du compte destinataire
                 await prisma.porteFeuille.update({
                     where: { id: receiver.porteFeuille?.id },
                     data: { balance: { increment: amount } }
                 });
-                // Création du transfert
                 const newTransfert = await prisma.transfert.create({
                     data: {
                         amount,
@@ -88,7 +77,6 @@ class TransfertController {
                         receiverId: receiver.id
                     }
                 });
-                // Reception de frais vers le portefeuille SUPERADMIN
                 const superAdmin = await prisma.compte.findFirst({
                     where: { role: 'SUPERADMIN' },
                     include: { porteFeuille: true }
@@ -102,7 +90,6 @@ class TransfertController {
                         },
                     });
                 }
-                // Notifications
                 await prisma.notification.create({
                     data: {
                         content: `Transfert de ${amount} ${sender.porteFeuille?.devise} envoyé à ${receiver.firstName} ${receiver.lastName}`,
@@ -132,9 +119,6 @@ class TransfertController {
             });
         }
     }
-    /**
-     * Annule un transfert existant
-     */
     static async cancelTransfert(req, res) {
         try {
             const { transfertId } = req.params;
@@ -159,10 +143,9 @@ class TransfertController {
                 });
                 return;
             }
-            // Vérifier si le délai d'annulation n'est pas dépassé (30 minutes)
             const transfertTime = new Date(transfert.createdAt).getTime();
             const currentTime = new Date().getTime();
-            const timeDiff = (currentTime - transfertTime) / (1000 * 60); // en minutes
+            const timeDiff = (currentTime - transfertTime) / (1000 * 60);
             if (timeDiff > 30) {
                 res.status(400).json({
                     success: false,
@@ -170,24 +153,19 @@ class TransfertController {
                 });
                 return;
             }
-            // Transaction atomique pour l'annulation
             await prisma.$transaction(async (prisma) => {
-                // Rembourser l'expéditeur
                 await prisma.porteFeuille.update({
                     where: { id: transfert.sender.porteFeuille?.id },
                     data: { balance: { increment: transfert.amount + transfert.frais } }
                 });
-                // Débiter le destinataire
                 await prisma.porteFeuille.update({
                     where: { id: transfert.receiver.porteFeuille?.id },
                     data: { balance: { decrement: transfert.amount } }
                 });
-                // Mettre à jour le statut du transfert
                 await prisma.transfert.update({
                     where: { id: transfert.id },
                     data: { status: TransfertStatus.CANCELLED }
                 });
-                // Reception de frais vers le portefeuille SUPERADMIN
                 const superAdmin = await prisma.compte.findFirst({
                     where: { role: 'SUPERADMIN' },
                     include: { porteFeuille: true }
@@ -201,7 +179,6 @@ class TransfertController {
                         },
                     });
                 }
-                // Notifications
                 await prisma.notification.create({
                     data: {
                         content: `Votre transfert de ${transfert.amount} ${transfert.sender.porteFeuille?.devise} a été annulé`,
@@ -228,9 +205,6 @@ class TransfertController {
             });
         }
     }
-    /**
-     * Renvoie un transfert existant
-     */
     static async resendTransfert(req, res) {
         try {
             const { transfertId } = req.params;
@@ -248,13 +222,11 @@ class TransfertController {
                 });
                 return;
             }
-            // Créer un nouveau transfert avec les mêmes détails
             const newTransfertData = {
                 senderId: oldTransfert.senderId,
                 receiverId: oldTransfert.receiverId,
                 amount: oldTransfert.amount
             };
-            // Utiliser la méthode createTransfert existante
             req.body = newTransfertData;
             await TransfertController.createTransfert(req, res);
         }
@@ -266,9 +238,6 @@ class TransfertController {
             });
         }
     }
-    /**
-     * Récupère l'historique des transferts d'un compte
-     */
     static async getTransfertsHistory(req, res) {
         try {
             const { compteId } = req.params;
@@ -332,3 +301,4 @@ class TransfertController {
     }
 }
 export default TransfertController;
+//# sourceMappingURL=TransfertController.js.map

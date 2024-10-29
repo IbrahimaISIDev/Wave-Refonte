@@ -1,13 +1,10 @@
-// src/services/NotificationService.ts
 import { PrismaClient } from "@prisma/client";
 import twilio from "twilio";
 const prisma = new PrismaClient();
-// Configuration Twilio
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 export class NotificationService {
     constructor(io) {
         this.io = io;
-        // Gestion des événements Socket.IO
         io.on("connection", (socket) => {
             console.log("Client connected:", socket.id);
             socket.on("join", (compteId) => {
@@ -21,7 +18,6 @@ export class NotificationService {
     }
     async createNotification(compteId, content, type = "general") {
         try {
-            // Créer la notification dans la base de données
             const notification = await prisma.notification.create({
                 data: {
                     content,
@@ -30,12 +26,10 @@ export class NotificationService {
                     isRead: false,
                 },
                 include: {
-                    compte: true, // Inclure les informations du compte pour obtenir le numéro de téléphone
+                    compte: true,
                 }
             });
-            // Émettre la notification en temps réel via Socket.IO
             this.io.to(`user-${compteId}`).emit("newNotification", notification);
-            // Si le compte a un numéro de téléphone valide et que le type nécessite un SMS
             if (notification.compte.phone && this.shouldSendSMS(type)) {
                 await this.sendSMS(notification.compte.phone, content);
             }
@@ -47,7 +41,6 @@ export class NotificationService {
         }
     }
     shouldSendSMS(type) {
-        // Liste des types de notifications qui nécessitent un SMS
         const smsRequiredTypes = ["urgent", "payment", "security"];
         return smsRequiredTypes.includes(type);
     }
@@ -93,3 +86,4 @@ export class NotificationService {
         }
     }
 }
+//# sourceMappingURL=NotificationService.js.map

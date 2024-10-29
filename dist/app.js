@@ -1,4 +1,3 @@
-// src/app.ts
 import express from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -26,10 +25,8 @@ const io = new Server(httpServer, {
     },
 });
 const prisma = new PrismaClient();
-// Middleware
 app.use(express.json());
 app.use(cors());
-// Socket.IO connection handling
 io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
     socket.on("join", (compteId) => {
@@ -40,12 +37,9 @@ io.on("connection", (socket) => {
         console.log("Client disconnected:", socket.id);
     });
 });
-// Services initialization
 const compteService = new CompteService(io);
 const notificationService = new NotificationService(io);
-// Controllers initialization
 const compteController = new CompteController(compteService);
-// Routes
 const BASE_URL = process.env.BASE_URL || "/api/v1";
 app.use(`${BASE_URL}/comptes`, CompteRoute(compteController));
 app.use(`${BASE_URL}/actor/clients`, ClientRoute());
@@ -61,3 +55,4 @@ httpServer.listen(PORT, () => {
     console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
 });
 export default httpServer;
+//# sourceMappingURL=app.js.map

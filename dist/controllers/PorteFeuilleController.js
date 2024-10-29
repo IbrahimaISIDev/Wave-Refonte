@@ -5,11 +5,9 @@ const prisma = new PrismaClient();
 export default class PorteFeuilleController {
     static async createWallet(req, res) {
         const { compteId } = req.body;
-        // Vérification de la présence de l'ID de compte
         if (!compteId) {
             return res.status(400).json({ message: "Compte ID non fourni" });
         }
-        // Vérification que l'ID de compte est un nombre
         const compteIdNumber = Number(compteId);
         if (isNaN(compteIdNumber)) {
             return res.status(400).json({ message: "Compte ID doit être un nombre" });
@@ -33,7 +31,7 @@ export default class PorteFeuilleController {
             const code = utils.generateRandomCode(5);
             await prisma.activation.create({
                 data: {
-                    porteFeuilleId: wallet.id, // Corrected property name
+                    porteFeuilleId: wallet.id,
                     code: code
                 }
             });
@@ -224,13 +222,12 @@ export default class PorteFeuilleController {
         }
     }
     static async verifyCodeExpiration(porteFeuilleId) {
-        // Vérifier et mettre à jour les codes expirés
         const expiredActivations = await prisma.activation.updateMany({
             where: {
                 porteFeuilleId: porteFeuilleId,
                 expiration: false,
                 createdAt: {
-                    lt: new Date(Date.now() - 24 * 60 * 60 * 1000) // 24 heures
+                    lt: new Date(Date.now() - 24 * 60 * 60 * 1000)
                 }
             },
             data: {
@@ -258,7 +255,7 @@ export default class PorteFeuilleController {
                 data: {
                     porteFeuilleId: req.body.portefeuilleId,
                     code: code,
-                    expiration: false, // boolean dans le schéma
+                    expiration: false,
                     isActive: false
                 }
             });
@@ -281,14 +278,13 @@ export default class PorteFeuilleController {
                 where: {
                     porteFeuilleId: req.body.portefeuilleId,
                     code: req.body.code,
-                    expiration: false, // non expiré
-                    isActive: false // non utilisé
+                    expiration: false,
+                    isActive: false
                 }
             });
             if (!activation) {
                 throw new Error("Code invalide ou expiré");
             }
-            // Mettre à jour le portefeuille et l'activation
             const [updatedPortefeuille, updatedActivation] = await prisma.$transaction([
                 prisma.porteFeuille.update({
                     where: { id: req.body.portefeuilleId },
@@ -351,3 +347,4 @@ export default class PorteFeuilleController {
         }
     }
 }
+//# sourceMappingURL=PorteFeuilleController.js.map

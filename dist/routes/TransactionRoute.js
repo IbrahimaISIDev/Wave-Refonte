@@ -7,3 +7,4 @@ router.get("/liste", TransactionController.getTransactions);
 router.get("/statistiques", TransactionController.getTransactionStats);
 router.post("/annuler/:transactionId", TransactionController.cancelTransaction);
 export default router;
+//# sourceMappingURL=TransactionRoute.js.map

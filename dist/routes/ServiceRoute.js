@@ -8,3 +8,4 @@ router.post("/", Middleware.auth, ServiceController.createService);
 router.put("/:id", Middleware.auth, ServiceController.updateService);
 router.delete("/:id", Middleware.auth, ServiceController.deleteService);
 export default router;
+//# sourceMappingURL=ServiceRoute.js.map

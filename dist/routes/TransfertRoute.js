@@ -6,3 +6,4 @@ router.get("/history/:compteId", TransfertController.getTransfertsHistory);
 router.post("/:transfertId/cancel", TransfertController.cancelTransfert);
 router.get("/:transfertId/resend", TransfertController.resendTransfert);
 export default router;
+//# sourceMappingURL=TransfertRoute.js.map

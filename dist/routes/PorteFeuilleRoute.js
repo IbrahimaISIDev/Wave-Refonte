@@ -26,3 +26,4 @@ router.put('/open', async (req, res, next) => {
     await PorteFeuilleController.openWallet(req, res);
 });
 export default router;
+//# sourceMappingURL=PorteFeuilleRoute.js.map

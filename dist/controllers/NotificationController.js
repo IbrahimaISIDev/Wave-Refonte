@@ -1,11 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 class NotificationController {
-    // Créer une nouvelle notification
     static async createNotification(req, res, notificationService) {
         try {
             const { compteId, content, type } = req.body;
-            // Vérifier si le compte existe
             const compte = await prisma.compte.findUnique({
                 where: { id: compteId },
             });
@@ -13,7 +11,6 @@ class NotificationController {
                 res.status(404).json({ message: "Compte non trouvé" });
                 return;
             }
-            // Créer la notification en utilisant le service
             const notification = await notificationService.createNotification(compteId, content, type);
             res.status(201).json({
                 message: "Notification créée avec succès",
@@ -27,7 +24,6 @@ class NotificationController {
             });
         }
     }
-    // Obtenir toutes les notifications d'un utilisateur
     static async getUserNotifications(req, res, notificationService) {
         try {
             const { compteId } = req.params;
@@ -44,7 +40,6 @@ class NotificationController {
             });
         }
     }
-    // Marquer une notification comme lue
     static async markAsRead(req, res) {
         try {
             const { id } = req.params;
@@ -64,7 +59,6 @@ class NotificationController {
             });
         }
     }
-    // Marquer toutes les notifications d'un utilisateur comme lues
     static async markAllAsRead(req, res) {
         try {
             const { compteId } = req.params;
@@ -86,7 +80,6 @@ class NotificationController {
             });
         }
     }
-    // Supprimer une notification
     static async deleteNotification(req, res) {
         try {
             const { id } = req.params;
@@ -104,7 +97,6 @@ class NotificationController {
             });
         }
     }
-    // Supprimer toutes les notifications lues d'un utilisateur
     static async deleteReadNotifications(req, res) {
         try {
             const { compteId } = req.params;
@@ -127,3 +119,4 @@ class NotificationController {
     }
 }
 export default NotificationController;
+//# sourceMappingURL=NotificationController.js.map

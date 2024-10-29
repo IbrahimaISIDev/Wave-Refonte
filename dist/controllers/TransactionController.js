@@ -1,13 +1,9 @@
 import { PrismaClient, TransactionType, TransactionStatus } from '@prisma/client';
 const prisma = new PrismaClient();
 class TransactionController {
-    /**
-     * Effectue un dépôt d'argent sur un portefeuille
-     */
     static async createDepot(req, res) {
         try {
             const { amount, compteId, agentId } = req.body;
-            // Validation des données
             if (!amount || !compteId || !agentId) {
                 res.status(400).json({ message: 'Veuillez fournir tous les champs requis' });
                 return;
@@ -16,7 +12,6 @@ class TransactionController {
                 res.status(400).json({ message: 'Le montant doit être positif' });
                 return;
             }
-            // Vérification du compte et du portefeuille
             const compte = await prisma.compte.findUnique({
                 where: { id: Number(compteId) },
                 include: { porteFeuille: true }
@@ -36,15 +31,12 @@ class TransactionController {
                 res.status(404).json({ message: 'Portefeuille non trouvé' });
                 return;
             }
-            // Vérification du solde et création de la transaction
             try {
                 const transaction = await prisma.$transaction(async (tx) => {
-                    // Mise à jour du solde du portefeuille
                     const updatedPorteFeuille = await tx.porteFeuille.update({
                         where: { id: porteFeuille.id },
                         data: { balance: porteFeuille.balance + amount }
                     });
-                    // Création de la transaction
                     const newTransaction = await tx.transaction.create({
                         data: {
                             amount,
@@ -55,7 +47,6 @@ class TransactionController {
                             porteFeuilleId: porteFeuille.id
                         }
                     });
-                    // Création de la notification
                     await tx.notification.create({
                         data: {
                             content: `Dépôt de ${amount} ${porteFeuille.devise} effectué avec succès`,
@@ -87,13 +78,9 @@ class TransactionController {
             });
         }
     }
-    /**
-     * Effectue un retrait d'argent depuis un portefeuille
-     */
     static async createRetrait(req, res) {
         try {
             const { amount, compteId, agentId } = req.body;
-            // Validation des données
             if (!amount || !compteId || !agentId) {
                 res.status(400).json({ message: 'Veuillez fournir tous les champs requis' });
                 return;
@@ -102,7 +89,6 @@ class TransactionController {
                 res.status(400).json({ message: 'Le montant doit être positif' });
                 return;
             }
-            // Vérification du compte et du portefeuille
             const compte = await prisma.compte.findUnique({
                 where: { id: Number(compteId) },
                 include: { porteFeuille: true }
@@ -129,7 +115,6 @@ class TransactionController {
                 res.status(404).json({ message: 'Portefeuille non trouvé' });
                 return;
             }
-            // Vérification du solde
             if (porteFeuille.balance < amount) {
                 res.status(400).json({
                     message: 'Solde insuffisant',
@@ -138,15 +123,12 @@ class TransactionController {
                 });
                 return;
             }
-            // Transaction Prisma
             try {
                 const transaction = await prisma.$transaction(async (tx) => {
-                    // Mise à jour du solde du portefeuille
                     const updatedPorteFeuille = await tx.porteFeuille.update({
                         where: { id: porteFeuille.id },
                         data: { balance: porteFeuille.balance - amount }
                     });
-                    // Création de la transaction
                     const newTransaction = await tx.transaction.create({
                         data: {
                             amount,
@@ -157,7 +139,6 @@ class TransactionController {
                             porteFeuilleId: porteFeuille.id
                         }
                     });
-                    // Création de la notification
                     await prisma.notification.create({
                         data: {
                             content: `Retrait de ${amount} ${porteFeuille.devise} effectué avec succès`,
@@ -189,30 +170,22 @@ class TransactionController {
             });
         }
     }
-    /**
-    * Liste les transactions avec possibilité de filtrage
-    */
     static async getTransactions(req, res) {
         try {
             const { startDate, endDate, type, compteId, status } = req.query;
-            // Construction du filtre dynamique
             let whereClause = {};
-            // Filtre par date
             if (startDate && endDate) {
                 whereClause.createdAt = {
                     gte: new Date(startDate),
                     lte: new Date(endDate)
                 };
             }
-            // Filtre par type de transaction
             if (type) {
                 whereClause.type = type;
             }
-            // Filtre par compte
             if (compteId) {
                 whereClause.compteId = Number(compteId);
             }
-            // Filtre par statut
             if (status) {
                 whereClause.status = status;
             }
@@ -242,7 +215,6 @@ class TransactionController {
                     createdAt: 'desc'
                 }
             });
-            // Calcul des statistiques
             const stats = {
                 totalTransactions: transactions.length,
                 totalDeposits: transactions.filter(t => t.type === TransactionType.DEPOSIT).length,
@@ -264,14 +236,10 @@ class TransactionController {
             });
         }
     }
-    /**
-     * Annule une transaction (dépôt ou retrait)
-     */
     static async cancelTransaction(req, res) {
         try {
             const { transactionId } = req.params;
             const { reason } = req.body;
-            // Vérification de l'existence de la transaction
             const transaction = await prisma.transaction.findUnique({
                 where: { id: Number(transactionId) },
                 include: {
@@ -285,7 +253,6 @@ class TransactionController {
                 });
                 return;
             }
-            // Vérification que la transaction n'est pas déjà annulée
             if (transaction.status === TransactionStatus.FAILED) {
                 res.status(400).json({
                     success: false,
@@ -295,23 +262,19 @@ class TransactionController {
             }
             try {
                 const result = await prisma.$transaction(async (tx) => {
-                    // Mise à jour du solde du portefeuille
                     const updatedBalance = transaction.type === TransactionType.DEPOSIT
-                        ? transaction.porteFeuille.balance - transaction.amount // Annulation d'un dépôt
-                        : transaction.porteFeuille.balance + transaction.amount; // Annulation d'un retrait
-                    // Mise à jour du portefeuille
+                        ? transaction.porteFeuille.balance - transaction.amount
+                        : transaction.porteFeuille.balance + transaction.amount;
                     await tx.porteFeuille.update({
                         where: { id: transaction.porteFeuilleId },
                         data: { balance: updatedBalance }
                     });
-                    // Mise à jour du statut de la transaction
                     const updatedTransaction = await tx.transaction.update({
                         where: { id: Number(transactionId) },
                         data: {
                             status: TransactionStatus.FAILED
                         }
                     });
-                    // Création d'une notification
                     await tx.notification.create({
                         data: {
                             content: `Transaction ${transaction.type} de ${transaction.amount} ${transaction.porteFeuille.devise} annulée. Raison: ${reason}`,
@@ -343,9 +306,6 @@ class TransactionController {
             });
         }
     }
-    /**
-     * Récupère les statistiques des transactions sur une période donnée
-     */
     static async getTransactionStats(req, res) {
         try {
             const { startDate, endDate, compteId } = req.query;
@@ -395,3 +355,4 @@ class TransactionController {
     }
 }
 export default TransactionController;
+//# sourceMappingURL=TransactionController.js.map

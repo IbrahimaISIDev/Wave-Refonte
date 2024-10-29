@@ -1,7 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 class PaymentController {
-    // Méthode pour effectuer un paiement
     static async createPayment(req, res) {
         try {
             const { compteId, operateurId, amount } = req.body;
@@ -53,11 +52,10 @@ class PaymentController {
                     status: "SUCCESS",
                 },
             });
-            // Nous avons vérifié que porteFeuille n'est pas nul ci-dessus
             await prisma.porteFeuille.update({
-                where: { id: compte.porteFeuille.id }, // Utilisation de '!' pour indiquer que ce n'est pas nul
+                where: { id: compte.porteFeuille.id },
                 data: {
-                    balance: compte.porteFeuille.balance - amount, // Utilisation de '!' ici aussi
+                    balance: compte.porteFeuille.balance - amount,
                 },
             });
             await prisma.notification.create({
@@ -80,7 +78,6 @@ class PaymentController {
             });
         }
     }
-    // Méthode pour obtenir les détails d'un paiement
     static async getPaymentDetails(req, res) {
         try {
             const { idPaiement } = req.params;
@@ -123,7 +120,6 @@ class PaymentController {
             });
         }
     }
-    // Méthode pour obtenir l'historique des paiements d'un client
     static async getClientPaymentHistory(req, res) {
         try {
             const { compteId } = req.params;
@@ -170,7 +166,6 @@ class PaymentController {
             });
         }
     }
-    // Méthode pour obtenir les statistiques de paiement d'un client
     static async getClientPaymentStats(req, res) {
         try {
             const { compteId } = req.params;
@@ -229,3 +224,4 @@ class PaymentController {
     }
 }
 export default PaymentController;
+//# sourceMappingURL=PaymentController.js.map

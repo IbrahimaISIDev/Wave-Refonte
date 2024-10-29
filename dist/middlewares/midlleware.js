@@ -2,18 +2,15 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 dotenv.config();
-// Initialisation de Prisma
 const prisma = new PrismaClient();
 class Middleware {
     static async auth(req, res, next) {
         try {
-            // Vérifier si le header Authorization existe
             const authHeader = req.headers.authorization;
             if (!authHeader) {
                 res.status(401).json({ message: "Authentification requise" });
                 return;
             }
-            // Extraire le token
             const token = authHeader.split(' ')[1];
             if (!token) {
                 res.status(401).json({ message: "Token non fourni" });
@@ -23,7 +20,6 @@ class Middleware {
                 throw new Error('JWT_SECRET is not defined in environment variables');
             }
             try {
-                // Vérifier et décoder le token directement avec jsonwebtoken
                 const decoded = jwt.verify(token, process.env.JWT_SECRET);
                 req.user = decoded;
                 next();
@@ -43,7 +39,6 @@ class Middleware {
             });
         }
     }
-    // Méthode pour vérifier si l'utilisateur est ADMIN
     static async isAdmin(req, res, next) {
         try {
             const idCompte = req.params.compteId;
@@ -66,7 +61,6 @@ class Middleware {
             });
         }
     }
-    // Méthode pour vérifier si l'utilisateur est SUPERADMIN
     static async isSuperAdmin(req, res, next) {
         try {
             const idCompte = req.params.compteId;
@@ -91,3 +85,4 @@ class Middleware {
     }
 }
 export default Middleware;
+//# sourceMappingURL=midlleware.js.map

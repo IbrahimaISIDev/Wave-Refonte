@@ -10,10 +10,8 @@ export default class ServiceController {
         });
         res.json(result);
     }
-    //create service
     static async createService(req, res) {
         try {
-            // Les champs correspondent au modèle Service dans le schéma
             const newService = await prisma.service.create({
                 data: {
                     nomService: req.body.nomService,
@@ -29,7 +27,6 @@ export default class ServiceController {
             });
         }
     }
-    //get service by id
     static async getServiceById(req, res) {
         const { id } = req.params;
         const result = await prisma.service.findUnique({
@@ -40,7 +37,6 @@ export default class ServiceController {
         });
         res.json(result);
     }
-    //update service
     static async updateService(req, res) {
         const { id } = req.params;
         const { firstName, lastName, phone, password, CNI } = req.body;
@@ -76,7 +72,6 @@ export default class ServiceController {
         });
         res.json(updatedCompte);
     }
-    //delete service
     static async deleteService(req, res) {
         const { id } = req.params;
         const result = await prisma.service.delete({
@@ -85,3 +80,4 @@ export default class ServiceController {
         res.json(result);
     }
 }
+//# sourceMappingURL=ServiceController.js.map

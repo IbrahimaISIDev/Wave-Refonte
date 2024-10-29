@@ -1,4 +1,3 @@
-// src/utils/upload.utils.ts
 import cloudinary from '../config/cloudinary.config.js';
 export const uploadImage = async (imageFile) => {
     try {
@@ -13,3 +12,4 @@ export const uploadImage = async (imageFile) => {
         throw new Error(`Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
 };
+//# sourceMappingURL=upload.utils.js.map

@@ -1,40 +1,50 @@
 {
   "compilerOptions": {
-    /* Visit https://aka.ms/tsconfig to read more about this file */
-
     /* Language and Environment */
-    "target": "ES2020" /* Set the JavaScript language version for emitted JavaScript and include compatible library declarations. */,
-
+    "target": "ES2020",
+    "lib": ["ES2020"],
+    
     /* Modules */
-    "module": "ES2020" /* Specify what module code is generated. */,
-    "rootDir": "./src" /* Specify the root folder within your source files. */,
-    "moduleResolution": "node" /* Specify how TypeScript looks up a file from a given module specifier. */,
-    "baseUrl": "./" /* Specify the base directory to resolve non-relative module names. */,
+    "module": "ES2020",
+    "moduleResolution": "node",
+    "rootDir": "./src",
+    "baseUrl": "./",
     "paths": {
-      "*": ["types/*"]
-    } /* Specify a set of entries that re-map imports to additional lookup locations. */,
-    // "rootDirs": [],                                   /* Allow multiple folders to be treated as one when resolving modules. */
+      "*": ["src/types/*"]
+    },
     "typeRoots": [
       "node_modules/@types",
       "src/types"
-    ] /* Specify multiple folders that act like './node_modules/@types'. */,
+    ],
 
-    "resolveJsonModule": true /* Enable importing .json files. */,
+    /* Emit */
+    "outDir": "./dist",
+    "removeComments": true,
+    "sourceMap": true,
 
-    "outDir": "./dist" /* Specify an output folder for all emitted files. */,
+    /* Module Resolution */
+    "allowJs": true,
+    "checkJs": false,
+    "resolveJsonModule": true,
 
-    "esModuleInterop": true /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */,
-    // "preserveSymlinks": true,                         /* Disable resolving symlinks to their realpath. This correlates to the same flag in node. */
-    "forceConsistentCasingInFileNames": true /* Ensure that casing is correct in imports. */,
+    /* Interop Constraints */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
 
     /* Type Checking */
-    "strict": true /* Enable all strict type-checking options. */,
-    "noImplicitAny": false /* Enable error reporting for expressions and declarations with an implied 'any' type. */,
+    "strict": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
 
     /* Completeness */
-    // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.spec.ts", "**/*.test.ts"]
 }

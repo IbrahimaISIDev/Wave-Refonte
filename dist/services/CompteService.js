@@ -1,4 +1,3 @@
-// src/services/CompteService.ts
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -6,7 +5,6 @@ import dotenv from 'dotenv';
 import twilio from 'twilio';
 dotenv.config();
 const prisma = new PrismaClient();
-// Configuration Twilio
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 export class CompteService {
     constructor(io) {
@@ -14,7 +12,6 @@ export class CompteService {
     }
     async createCompte(data) {
         const { login, password, phone } = data;
-        // Vérifications
         const existingCompteByLogin = await prisma.compte.findUnique({
             where: { login },
         });
@@ -27,12 +24,9 @@ export class CompteService {
         if (existingCompteByPhone) {
             throw new Error("Ce numéro de téléphone est déjà utilisé");
         }
-        // Hashage du mot de passe
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
-        // Transaction Prisma pour création synchronisée
         const result = await prisma.$transaction(async (prisma) => {
-            // Création du compte
             const newCompte = await prisma.compte.create({
                 data: {
                     ...data,
@@ -40,7 +34,6 @@ export class CompteService {
                     role: data.role || "CLIENT",
                 },
             });
-            // Création du portefeuille
             const porteFeuille = await prisma.porteFeuille.create({
                 data: {
                     compteId: newCompte.id,
@@ -50,9 +43,7 @@ export class CompteService {
                     isActive: false,
                 },
             });
-            // Envoi du SMS de bienvenue
             await this.sendWelcomeSMS(newCompte);
-            // Création d'une notification
             await prisma.notification.create({
                 data: {
                     content: `Bienvenue ${newCompte.firstName} ! Votre compte a été créé avec succès.`,
@@ -62,7 +53,6 @@ export class CompteService {
             });
             return { newCompte, porteFeuille };
         });
-        // Génération du token JWT
         const token = this.generateToken(result.newCompte.id);
         const { password: _, ...compteWithoutPassword } = result.newCompte;
         return {
@@ -82,7 +72,6 @@ export class CompteService {
         }
         catch (error) {
             console.error("Erreur lors de l'envoi du SMS de bienvenue:", error);
-            // Ne pas bloquer la création du compte si le SMS échoue
         }
     }
     generateToken(userId) {
@@ -93,12 +82,10 @@ export class CompteService {
             where: { id: compteId },
             data: { status },
         });
-        // Notification temps réel
         this.io.to(`user-${compteId}`).emit("statusUpdate", {
             compteId,
             status: updatedCompte.status,
         });
-        // Notification SMS
         if (status === "ACTIVE") {
             const compte = await prisma.compte.findUnique({
                 where: { id: compteId },
@@ -122,3 +109,4 @@ export class CompteService {
         }
     }
 }
+//# sourceMappingURL=CompteService.js.map
