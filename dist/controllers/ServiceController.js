@@ -1,7 +1,12 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
-const prisma = new PrismaClient();
-export default class ServiceController {
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const bcrypt_1 = __importDefault(require("bcrypt"));
+const prisma = new client_1.PrismaClient();
+class ServiceController {
     static async getAllServices(req, res) {
         const result = await prisma.service.findMany({
             include: {
@@ -63,7 +68,7 @@ export default class ServiceController {
             res.status(400).json({ error: 'Le mot de passe doit etre 6 charactères .' });
             return;
         }
-        const passwordHash = await bcrypt.hash(password, 10);
+        const passwordHash = await bcrypt_1.default.hash(password, 10);
         const updatedCompte = await prisma.compte.update({
             where: { id: Number(id) },
             data: {
@@ -85,3 +90,4 @@ export default class ServiceController {
         res.json(result);
     }
 }
+exports.default = ServiceController;

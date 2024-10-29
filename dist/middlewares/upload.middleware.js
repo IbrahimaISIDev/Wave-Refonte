@@ -1,13 +1,19 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.upload = void 0;
 // src/middleware/upload.middleware.ts
-import multer from 'multer';
-import path from 'path';
+const multer_1 = __importDefault(require("multer"));
+const path_1 = __importDefault(require("path"));
 // Configure multer for file upload
-const storage = multer.diskStorage({
+const storage = multer_1.default.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + path.extname(file.originalname));
+        cb(null, Date.now() + path_1.default.extname(file.originalname));
     }
 });
 const fileFilter = (req, file, cb) => {
@@ -18,7 +24,7 @@ const fileFilter = (req, file, cb) => {
         cb(new Error('Not an image! Please upload an image.'), false);
     }
 };
-export const upload = multer({
+exports.upload = (0, multer_1.default)({
     storage: storage,
     fileFilter: fileFilter,
     limits: {

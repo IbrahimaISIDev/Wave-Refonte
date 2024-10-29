@@ -1,4 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
 class CompteController {
+    compteService;
     constructor(compteService) {
         this.compteService = compteService;
     }
@@ -46,4 +49,4 @@ class CompteController {
         }
     }
 }
-export default CompteController;
+exports.default = CompteController;

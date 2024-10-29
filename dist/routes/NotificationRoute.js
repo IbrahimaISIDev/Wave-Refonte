@@ -1,21 +1,26 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
 // src/routes/NotificationRoute.ts
-import { Router } from "express";
-import NotificationController from "../controllers/NotificationController.js";
-import Middleware from "../middlewares/midlleware.js";
+const express_1 = require("express");
+const NotificationController_js_1 = __importDefault(require("../controllers/NotificationController.js"));
+const midlleware_js_1 = __importDefault(require("../middlewares/midlleware.js"));
 const NotificationRoute = (notificationService) => {
-    const router = Router();
+    const router = (0, express_1.Router)();
     // Use the middleware to protect all routes
-    router.use(Middleware.auth);
+    router.use(midlleware_js_1.default.auth);
     // Create a notification
-    router.post("/", (req, res) => NotificationController.createNotification(req, res, notificationService));
+    router.post("/", (req, res) => NotificationController_js_1.default.createNotification(req, res, notificationService));
     // Get user notifications
-    router.get("/user/:compteId", (req, res) => NotificationController.getUserNotifications(req, res, notificationService));
+    router.get("/user/:compteId", (req, res) => NotificationController_js_1.default.getUserNotifications(req, res, notificationService));
     // Mark as read
-    router.put("/:id/read", (req, res) => NotificationController.markAsRead(req, res));
-    router.put("/user/:compteId/read-all", (req, res) => NotificationController.markAllAsRead(req, res));
+    router.put("/:id/read", (req, res) => NotificationController_js_1.default.markAsRead(req, res));
+    router.put("/user/:compteId/read-all", (req, res) => NotificationController_js_1.default.markAllAsRead(req, res));
     // Deletion routes
-    router.delete("/:id", (req, res) => NotificationController.deleteNotification(req, res));
-    router.delete("/user/:compteId/read", (req, res) => NotificationController.deleteReadNotifications(req, res));
+    router.delete("/:id", (req, res) => NotificationController_js_1.default.deleteNotification(req, res));
+    router.delete("/user/:compteId/read", (req, res) => NotificationController_js_1.default.deleteReadNotifications(req, res));
     return router;
 };
-export default NotificationRoute;
+exports.default = NotificationRoute;

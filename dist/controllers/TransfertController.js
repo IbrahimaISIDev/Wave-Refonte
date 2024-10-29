@@ -1,5 +1,7 @@
-import { PrismaClient, TransfertStatus } from '@prisma/client';
-const prisma = new PrismaClient();
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 class TransfertController {
     /**
      * Crée un nouveau transfert entre deux comptes
@@ -83,7 +85,7 @@ class TransfertController {
                     data: {
                         amount,
                         frais,
-                        status: TransfertStatus.COMPLETED,
+                        status: client_1.TransfertStatus.COMPLETED,
                         senderId: sender.id,
                         receiverId: receiver.id
                     }
@@ -152,7 +154,7 @@ class TransfertController {
                 });
                 return;
             }
-            if (transfert.status !== TransfertStatus.COMPLETED) {
+            if (transfert.status !== client_1.TransfertStatus.COMPLETED) {
                 res.status(400).json({
                     success: false,
                     message: "Ce transfert ne peut pas être annulé"
@@ -185,7 +187,7 @@ class TransfertController {
                 // Mettre à jour le statut du transfert
                 await prisma.transfert.update({
                     where: { id: transfert.id },
-                    data: { status: TransfertStatus.CANCELLED }
+                    data: { status: client_1.TransfertStatus.CANCELLED }
                 });
                 // Reception de frais vers le portefeuille SUPERADMIN
                 const superAdmin = await prisma.compte.findFirst({
@@ -331,4 +333,4 @@ class TransfertController {
         }
     }
 }
-export default TransfertController;
+exports.default = TransfertController;
