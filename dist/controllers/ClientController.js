@@ -2,8 +2,51 @@ import { PrismaClient } from "@prisma/client";
 import { uploadImage } from "../utils/upload.utils.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { AuthService } from "../services/AuthService.js";
 const prisma = new PrismaClient();
+const authService = new AuthService();
 class ClientController {
+    static async initiateFirstLogin(req, res) {
+        try {
+            const { phone } = req.body;
+            if (!phone) {
+                res.status(400).json({ message: "Numéro de téléphone requis" });
+                return;
+            }
+            const result = await authService.initiateFirstLogin(phone);
+            res.status(200).json(result);
+        }
+        catch (error) {
+            console.error("Erreur lors de l'initiation de la première connexion:", error);
+            res.status(500).json({
+                message: "Erreur lors de l'initiation de la première connexion",
+                error: error instanceof Error ? error.message : "Erreur inconnue",
+            });
+        }
+    }
+    static async validateFirstLogin(req, res) {
+        try {
+            const { phone, temporaryCode } = req.body;
+            if (!phone || !temporaryCode) {
+                res.status(400).json({
+                    message: "Numéro de téléphone et code temporaire requis",
+                });
+                return;
+            }
+            const result = await authService.validateFirstLogin(phone, temporaryCode);
+            res.status(200).json({
+                message: "Première connexion réussie",
+                ...result,
+            });
+        }
+        catch (error) {
+            console.error("Erreur lors de la validation de la première connexion:", error);
+            res.status(500).json({
+                message: "Erreur lors de la validation de la première connexion",
+                error: error instanceof Error ? error.message : "Erreur inconnue",
+            });
+        }
+    }
     static async getAllClients(req, res) {
         try {
             const clients = await prisma.client.findMany({
@@ -193,6 +236,14 @@ class ClientController {
             }
             const compte = await prisma.compte.findUnique({
                 where: { phone },
+                include: {
+                    porteFeuille: true,
+                    payments: true,
+                    sentTransferts: true,
+                    receivedTransferts: true,
+                    notifications: true,
+                    transactions: true,
+                },
             });
             if (!compte) {
                 res.status(401).json({ message: "Identifiants invalides" });
@@ -214,6 +265,17 @@ class ClientController {
                     lastName: compte.lastName,
                     phone: compte.phone,
                     role: compte.role,
+                    porteFeuille: {
+                        solde: compte.porteFeuille?.balance,
+                        devise: compte.porteFeuille?.devise,
+                        montantPlafond: compte.porteFeuille?.montantPlafond,
+                        isActive: compte.porteFeuille?.isActive,
+                    },
+                    paiements: compte.payments,
+                    transfertsEnvoyes: compte.sentTransferts,
+                    transfertsRecus: compte.receivedTransferts,
+                    notifications: compte.notifications,
+                    transactions: compte.transactions,
                 },
             });
         }

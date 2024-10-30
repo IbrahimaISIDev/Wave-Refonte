@@ -18,6 +18,7 @@ import PaymentRoute from './routes/PaymentRoute.js';
 import PorteFeuilleRoute from './routes/PorteFeuilleRoute.js';
 import TransactionRoute from './routes/TransactionRoute.js';
 import tranfertRoute from './routes/TransfertRoute.js';
+import ServiceRoute from './routes/ServiceRoute.js';
 
 dotenv.config();
 
@@ -74,6 +75,7 @@ app.use(`${BASE_URL}/transferts`, tranfertRoute);
 app.use(`${BASE_URL}/portefeuilles`, PorteFeuilleRoute);
 app.use(`${BASE_URL}/operateurs`, OperateurRoute);
 app.use(`${BASE_URL}/paiements`, PaymentRoute);
+app.use(`${BASE_URL}/services`, ServiceRoute);
 
 const PORT = process.env.PORT || 3000;
 
