@@ -12,10 +12,14 @@ export class CompteService {
     }
     async createCompte(data) {
         const { login, secretCode, phone } = data;
-        const existingCompteByLogin = await prisma.compte.findUnique({ where: { login } });
+        const existingCompteByLogin = await prisma.compte.findUnique({
+            where: { login },
+        });
         if (existingCompteByLogin)
             throw new Error("Ce login est déjà utilisé");
-        const existingCompteByPhone = await prisma.compte.findUnique({ where: { phone } });
+        const existingCompteByPhone = await prisma.compte.findUnique({
+            where: { phone },
+        });
         if (existingCompteByPhone)
             throw new Error("Ce numéro de téléphone est déjà utilisé");
         if (secretCode.length !== 4 || !/^\d+$/.test(secretCode)) {
@@ -96,7 +100,9 @@ export class CompteService {
             status: updatedCompte.status,
         });
         if (status === "ACTIVE") {
-            const compte = await prisma.compte.findUnique({ where: { id: compteId } });
+            const compte = await prisma.compte.findUnique({
+                where: { id: compteId },
+            });
             if (compte)
                 await this.sendStatusSMS(compte, "activé");
         }

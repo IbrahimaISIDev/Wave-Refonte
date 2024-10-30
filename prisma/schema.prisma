@@ -58,6 +58,8 @@ model Compte {
   status     Etat     @default(INACTIVE)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  lastLoginAt DateTime?
+  qrCodeUrl String?
 
   // Relations
   sentTransferts     Transfert[]    @relation("SentTransferts")
@@ -109,6 +111,7 @@ model Client {
   compteId  Int      @unique // Added @unique
   photo     String
   createdAt DateTime @default(now())
+  isFirstLogin Boolean  @default(true)
 
   // Relations
   compte Compte @relation(fields: [compteId], references: [id])
@@ -259,4 +262,13 @@ model Notification {
   compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("notifications")
+}
+
+model TemporaryCode {
+  id        Int      @id @default(autoincrement())
+  code      String
+  phone     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
 }
