@@ -5,6 +5,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import compression from 'compression';
 import { CompteService } from './services/CompteService.js';
 import { NotificationService } from './services/NotificationService.js';
 import CompteController from "./controllers/CompteController.js";
@@ -34,6 +35,8 @@ const prisma = new PrismaClient();
 // Middleware
 app.use(express.json());
 app.use(cors());
+// Middleware de compression
+app.use(compression());
 
 // Socket.IO connection handling
 io.on("connection", (socket) => {
@@ -58,6 +61,10 @@ const compteController = new CompteController(compteService);
 
 // Routes
 const BASE_URL = process.env.BASE_URL || "/api/v1";
+
+app.get('/api/v1/test', (req, res) => {
+  res.json({ message: 'API is working!' });
+});
 
 app.use(`${BASE_URL}/comptes`, CompteRoute(compteController));
 app.use(`${BASE_URL}/actor/clients`, ClientRoute());

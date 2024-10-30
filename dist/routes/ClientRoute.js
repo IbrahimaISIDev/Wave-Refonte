@@ -9,6 +9,7 @@ const ClientRoute = () => {
     router.get("/user/:compteId", ClientController.getClientByCompteId);
     router.post("/", Middleware.auth, upload.single('photo'), ClientController.createClient);
     router.put("/:id", Middleware.auth, upload.single('photo'), ClientController.updateClient);
+    router.post("/login", ClientController.loginClient);
     return router;
 };
 export default ClientRoute;

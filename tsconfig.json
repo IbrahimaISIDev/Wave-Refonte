@@ -5,8 +5,8 @@
     "lib": ["es6", "dom", "esnext"],
 
     /* Modules */
-    "module": "NodeNext",        // Changé pour une meilleure compatibilité avec Node.js
-    "moduleResolution": "NodeNext", // Changé pour correspondre au module
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
     "rootDir": "./src",
     "baseUrl": "./",
     "paths": {
@@ -20,11 +20,6 @@
     "removeComments": true,
     "sourceMap": true,
 
-    /* Module Resolution */
-    "allowJs": true,
-    "checkJs": false,
-    "resolveJsonModule": true,
-
     /* Interop Constraints */
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -36,8 +31,8 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictBindCallApply": true,
-    "noUnusedLocals": false,     // Gardé à false pour le développement
-    "noUnusedParameters": false, // Gardé à false pour le développement
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
 
     /* Completeness */

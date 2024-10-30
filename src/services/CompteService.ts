@@ -2,8 +2,8 @@
 import { PrismaClient, Role, Compte } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import dotenv from 'dotenv';
-import twilio from 'twilio';
+import dotenv from "dotenv";
+import twilio from "twilio";
 import { Server as SocketServer } from "socket.io";
 
 dotenv.config();
@@ -25,46 +25,52 @@ export class CompteService {
 
   async createCompte(data: {
     login: string;
-    password: string;
     firstName: string;
     lastName: string;
     phone: string;
     CNI: string;
+    secretCode: string;
+    password: string;
     role?: Role;
   }) {
-    const { login, password, phone } = data;
+    const { login, secretCode, phone } = data;
 
-    // Vérifications
+    // Vérifier que le login n'est pas déjà utilisé
     const existingCompteByLogin = await prisma.compte.findUnique({
       where: { login },
     });
-    if (existingCompteByLogin) {
-      throw new Error("Ce login est déjà utilisé");
-    }
+    if (existingCompteByLogin) throw new Error("Ce login est déjà utilisé");
 
+    // Vérifier que le numéro de téléphone n'est pas déjà utilisé
     const existingCompteByPhone = await prisma.compte.findUnique({
       where: { phone },
     });
-    if (existingCompteByPhone) {
+    if (existingCompteByPhone)
       throw new Error("Ce numéro de téléphone est déjà utilisé");
+
+    // Vérifier que le code secret est exactement de 4 chiffres
+    if (secretCode.length !== 4 || !/^\d+$/.test(secretCode)) {
+      throw new Error("Le code secret doit être un nombre de 4 chiffres.");
     }
 
-    // Hashage du mot de passe
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+  // Hasher le code secret
+  const salt = await bcrypt.genSalt(10);
+  const hashedSecretCode = await bcrypt.hash(secretCode, salt);
 
-    // Transaction Prisma pour création synchronisée
     const result = await prisma.$transaction(async (prisma) => {
-      // Création du compte
       const newCompte = await prisma.compte.create({
         data: {
-          ...data,
-          password: hashedPassword,
+          login: data.login,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          CNI: data.CNI,
+          secretCode: hashedSecretCode,
+          password: data.password,
           role: data.role || "CLIENT",
         },
       });
 
-      // Création du portefeuille
       const porteFeuille = await prisma.porteFeuille.create({
         data: {
           compteId: newCompte.id,
@@ -75,10 +81,8 @@ export class CompteService {
         },
       });
 
-      // Envoi du SMS de bienvenue
       await this.sendWelcomeSMS(newCompte);
 
-      // Création d'une notification
       await prisma.notification.create({
         data: {
           content: `Bienvenue ${newCompte.firstName} ! Votre compte a été créé avec succès.`,
@@ -90,12 +94,11 @@ export class CompteService {
       return { newCompte, porteFeuille };
     });
 
-    // Génération du token JWT
     const token = this.generateToken(result.newCompte.id);
+    const { secretCode: _, ...compteWithoutSecretCode } = result.newCompte;
 
-    const { password: _, ...compteWithoutPassword } = result.newCompte;
     return {
-      compte: compteWithoutPassword,
+      compte: compteWithoutSecretCode,
       porteFeuille: result.porteFeuille,
       token,
     };
@@ -110,17 +113,26 @@ export class CompteService {
       });
       console.log("SMS de bienvenue envoyé:", message.sid);
     } catch (error) {
-      console.error("Erreur lors de l'envoi du SMS de bienvenue:", error);
+      if (error instanceof Error) {
+        // Type guard
+        console.error(
+          "Erreur lors de l'envoi du SMS de bienvenue:",
+          error.message
+        );
+      } else {
+        console.error(
+          "Erreur inconnue lors de l'envoi du SMS de bienvenue:",
+          error
+        );
+      }
       // Ne pas bloquer la création du compte si le SMS échoue
     }
   }
 
   private generateToken(userId: number): string {
-    return jwt.sign(
-      { userId },
-      process.env.JWT_SECRET as string,
-      { expiresIn: process.env.JWT_EXPIRES_IN || "24h" }
-    );
+    return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
+      expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+    });
   }
 
   async updateCompteStatus(compteId: number, status: "ACTIVE" | "INACTIVE") {
@@ -129,20 +141,16 @@ export class CompteService {
       data: { status },
     });
 
-    // Notification temps réel
     this.io.to(`user-${compteId}`).emit("statusUpdate", {
       compteId,
       status: updatedCompte.status,
     });
 
-    // Notification SMS
     if (status === "ACTIVE") {
       const compte = await prisma.compte.findUnique({
         where: { id: compteId },
       });
-      if (compte) {
-        await this.sendStatusSMS(compte, "activé");
-      }
+      if (compte) await this.sendStatusSMS(compte, "activé");
     }
 
     return updatedCompte;
@@ -156,7 +164,23 @@ export class CompteService {
         from: process.env.TWILIO_PHONE_NUMBER,
       });
     } catch (error) {
-      console.error("Erreur lors de l'envoi du SMS de statut:", error);
+      if (error instanceof Error) {
+        // Type guard
+        console.error(
+          "Erreur lors de l'envoi du SMS de statut:",
+          error.message
+        );
+      } else {
+        console.error(
+          "Erreur inconnue lors de l'envoi du SMS de statut:",
+          error
+        );
+      }
     }
+  }
+  static generateToken(userId: number): string {
+    return jwt.sign({ userId }, process.env.JWT_SECRET as string, {
+      expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+    });
   }
 }

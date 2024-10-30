@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { uploadImage } from "../utils/upload.utils.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 const prisma = new PrismaClient();
 class ClientController {
     static async getAllClients(req, res) {
@@ -177,6 +179,49 @@ class ClientController {
             res.status(500).json({
                 message: "Erreur lors de la mise à jour du client",
                 error: error instanceof Error ? error.message : "Unknown error",
+            });
+        }
+    }
+    static async loginClient(req, res) {
+        try {
+            const { phone, secretCode } = req.body;
+            if (!phone || !secretCode) {
+                res
+                    .status(400)
+                    .json({ message: "Numéro de téléphone et code secret requis" });
+                return;
+            }
+            const compte = await prisma.compte.findUnique({
+                where: { phone },
+            });
+            if (!compte) {
+                res.status(401).json({ message: "Identifiants invalides" });
+                return;
+            }
+            const isSecretCodeValid = await bcrypt.compare(secretCode, compte.secretCode);
+            if (!isSecretCodeValid) {
+                res.status(401).json({ message: "Identifiants invalides" });
+                return;
+            }
+            const token = jwt.sign({ id: compte.id, role: compte.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
+            res.status(200).json({
+                message: "Connexion réussie",
+                token,
+                user: {
+                    id: compte.id,
+                    login: compte.login,
+                    firstName: compte.firstName,
+                    lastName: compte.lastName,
+                    phone: compte.phone,
+                    role: compte.role,
+                },
+            });
+        }
+        catch (error) {
+            console.error("Erreur lors de la connexion du client:", error);
+            res.status(500).json({
+                message: "Erreur lors de la connexion",
+                error: error instanceof Error ? error.message : "Erreur inconnue",
             });
         }
     }

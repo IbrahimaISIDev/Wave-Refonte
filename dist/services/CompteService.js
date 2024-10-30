@@ -1,8 +1,8 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import dotenv from 'dotenv';
-import twilio from 'twilio';
+import dotenv from "dotenv";
+import twilio from "twilio";
 dotenv.config();
 const prisma = new PrismaClient();
 const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
@@ -11,26 +11,28 @@ export class CompteService {
         this.io = io;
     }
     async createCompte(data) {
-        const { login, password, phone } = data;
-        const existingCompteByLogin = await prisma.compte.findUnique({
-            where: { login },
-        });
-        if (existingCompteByLogin) {
+        const { login, secretCode, phone } = data;
+        const existingCompteByLogin = await prisma.compte.findUnique({ where: { login } });
+        if (existingCompteByLogin)
             throw new Error("Ce login est déjà utilisé");
-        }
-        const existingCompteByPhone = await prisma.compte.findUnique({
-            where: { phone },
-        });
-        if (existingCompteByPhone) {
+        const existingCompteByPhone = await prisma.compte.findUnique({ where: { phone } });
+        if (existingCompteByPhone)
             throw new Error("Ce numéro de téléphone est déjà utilisé");
+        if (secretCode.length !== 4 || !/^\d+$/.test(secretCode)) {
+            throw new Error("Le code secret doit être un nombre de 4 chiffres.");
         }
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedSecretCode = await bcrypt.hash(secretCode, salt);
         const result = await prisma.$transaction(async (prisma) => {
             const newCompte = await prisma.compte.create({
                 data: {
-                    ...data,
-                    password: hashedPassword,
+                    login: data.login,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    phone: data.phone,
+                    CNI: data.CNI,
+                    secretCode: hashedSecretCode,
+                    password: data.password,
                     role: data.role || "CLIENT",
                 },
             });
@@ -54,9 +56,9 @@ export class CompteService {
             return { newCompte, porteFeuille };
         });
         const token = this.generateToken(result.newCompte.id);
-        const { password: _, ...compteWithoutPassword } = result.newCompte;
+        const { secretCode: _, ...compteWithoutSecretCode } = result.newCompte;
         return {
-            compte: compteWithoutPassword,
+            compte: compteWithoutSecretCode,
             porteFeuille: result.porteFeuille,
             token,
         };
@@ -71,11 +73,18 @@ export class CompteService {
             console.log("SMS de bienvenue envoyé:", message.sid);
         }
         catch (error) {
-            console.error("Erreur lors de l'envoi du SMS de bienvenue:", error);
+            if (error instanceof Error) {
+                console.error("Erreur lors de l'envoi du SMS de bienvenue:", error.message);
+            }
+            else {
+                console.error("Erreur inconnue lors de l'envoi du SMS de bienvenue:", error);
+            }
         }
     }
     generateToken(userId) {
-        return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || "24h" });
+        return jwt.sign({ userId }, process.env.JWT_SECRET, {
+            expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+        });
     }
     async updateCompteStatus(compteId, status) {
         const updatedCompte = await prisma.compte.update({
@@ -87,12 +96,9 @@ export class CompteService {
             status: updatedCompte.status,
         });
         if (status === "ACTIVE") {
-            const compte = await prisma.compte.findUnique({
-                where: { id: compteId },
-            });
-            if (compte) {
+            const compte = await prisma.compte.findUnique({ where: { id: compteId } });
+            if (compte)
                 await this.sendStatusSMS(compte, "activé");
-            }
         }
         return updatedCompte;
     }
@@ -105,8 +111,18 @@ export class CompteService {
             });
         }
         catch (error) {
-            console.error("Erreur lors de l'envoi du SMS de statut:", error);
+            if (error instanceof Error) {
+                console.error("Erreur lors de l'envoi du SMS de statut:", error.message);
+            }
+            else {
+                console.error("Erreur inconnue lors de l'envoi du SMS de statut:", error);
+            }
         }
+    }
+    static generateToken(userId) {
+        return jwt.sign({ userId }, process.env.JWT_SECRET, {
+            expiresIn: process.env.JWT_EXPIRES_IN || "24h",
+        });
     }
 }
 //# sourceMappingURL=CompteService.js.map

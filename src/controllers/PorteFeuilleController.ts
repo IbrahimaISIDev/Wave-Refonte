@@ -386,7 +386,7 @@ export default class PorteFeuilleController {
                 throw new Error("Portefeuille non trouvé");
             }
             
-            if(!utils.comparePassword(secretCode, portefeuille.compte.password)) {
+            if(!utils.comparePassword(secretCode, portefeuille.compte.secretCode)) {
                 throw new Error("Code secret invalide");
             }
             
