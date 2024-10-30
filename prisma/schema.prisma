@@ -46,46 +46,47 @@ enum PaymentStatus {
 }
 
 model Compte {
-  id          Int      @id @default(autoincrement())
-  login       String   @unique
-  password    String
-  role        Role     @default(CLIENT)
-  firstName   String 
-  lastName    String
-  phone       String   @unique
-  CNI         String   
-  status      Etat     @default(INACTIVE)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id       Int    @id @default(autoincrement())
+  login    String @unique
+  password String // Assurez-vous que cette ligne est présente
+  secretCode String
+  role       Role     @default(CLIENT)
+  firstName  String
+  lastName   String
+  phone      String   @unique
+  CNI        String
+  status     Etat     @default(INACTIVE)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  sentTransferts     Transfert[] @relation("SentTransferts")
-  receivedTransferts Transfert[] @relation("ReceivedTransferts")
+  sentTransferts     Transfert[]    @relation("SentTransferts")
+  receivedTransferts Transfert[]    @relation("ReceivedTransferts")
   notifications      Notification[]
   payments           Payment[]
   transactions       Transaction[]
-  
+
   // One-to-One relations
-  superadmin    SuperAdmin?
-  admin         Admin?
-  agent         Agent?
-  client        Client?
-  operateur     Operateur?
-  service       Service?
-  porteFeuille  PorteFeuille?
+  superadmin   SuperAdmin?
+  admin        Admin?
+  agent        Agent?
+  client       Client?
+  operateur    Operateur?
+  service      Service?
+  porteFeuille PorteFeuille?
 
   @@map("comptes")
 }
 
 model SuperAdmin {
   id        Int      @id @default(autoincrement())
-  compteId  Int      @unique  // Added @unique
+  compteId  Int      @unique // Added @unique
   email     String
   photo     String
   createdAt DateTime @default(now())
 
   // Relations
-  compte    Compte   @relation(fields: [compteId], references: [id])
+  compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("superadmins")
 }
@@ -98,81 +99,81 @@ model Admin {
   createdAt DateTime @default(now())
 
   // Relations
-  compte    Compte   @relation(fields: [compteId], references: [id])
+  compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("admins")
 }
 
 model Client {
   id        Int      @id @default(autoincrement())
-  compteId  Int      @unique  // Added @unique
+  compteId  Int      @unique // Added @unique
   photo     String
   createdAt DateTime @default(now())
 
   // Relations
-  compte    Compte   @relation(fields: [compteId], references: [id])
+  compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("clients")
 }
 
 model Service {
-  id          Int      @id @default(autoincrement())
-  compteId    Int      @unique  // Added @unique
-  nomService  String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  compteId   Int      @unique // Added @unique
+  nomService String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   // Relations
-  compte      Compte   @relation(fields: [compteId], references: [id])
+  compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("services")
 }
 
 model Operateur {
   id           Int       @id @default(autoincrement())
-  compteId     Int       @unique  // Added @unique
+  compteId     Int       @unique // Added @unique
   nomOperateur String
   photo        String
   createdAt    DateTime  @default(now())
-  payments     Payment[]  // Added missing relation
+  payments     Payment[] // Added missing relation
 
   // Relations
-  compte       Compte    @relation(fields: [compteId], references: [id])
+  compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("operateurs")
 }
 
 model Agent {
-  id               Int           @id @default(autoincrement())
-  compteId         Int          @unique  // Added @unique
+  id               Int      @id @default(autoincrement())
+  compteId         Int      @unique // Added @unique
   adresse          String
   nomAgence        String
   registreCommerce String
   ninea            String
-  commissionRate   Float         @default(0.05)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  commissionRate   Float    @default(0.05)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   // Relations
-  compte           Compte        @relation(fields: [compteId], references: [id])
-  transactions     Transaction[]
+  compte       Compte        @relation(fields: [compteId], references: [id])
+  transactions Transaction[]
 
   @@map("agents")
 }
 
 model Transfert {
-  id         Int            @id @default(autoincrement())
+  id         Int             @id @default(autoincrement())
   amount     Float
   frais      Float
   status     TransfertStatus @default(PENDING)
   senderId   Int
   receiverId Int
-  createdAt  DateTime       @default(now())
-  updatedAt  DateTime       @updatedAt
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   // Relations
-  sender     Compte         @relation("SentTransferts", fields: [senderId], references: [id])
-  receiver   Compte         @relation("ReceivedTransferts", fields: [receiverId], references: [id])
+  sender   Compte @relation("SentTransferts", fields: [senderId], references: [id])
+  receiver Compte @relation("ReceivedTransferts", fields: [receiverId], references: [id])
 
   @@map("transferts")
 }
@@ -185,31 +186,31 @@ model Transaction {
   compteId       Int
   agentId        Int
   porteFeuilleId Int
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
 
   // Relations
-  compte         Compte           @relation(fields: [compteId], references: [id])
-  agent          Agent            @relation(fields: [agentId], references: [id])
-  porteFeuille   PorteFeuille     @relation(fields: [porteFeuilleId], references: [id])
+  compte       Compte       @relation(fields: [compteId], references: [id])
+  agent        Agent        @relation(fields: [agentId], references: [id])
+  porteFeuille PorteFeuille @relation(fields: [porteFeuilleId], references: [id])
 
   @@map("transactions")
 }
 
 model PorteFeuille {
-  id             Int           @id @default(autoincrement())
-  balance        Float         @default(0)
-  devise         String        @default("XOF")
+  id             Int      @id @default(autoincrement())
+  balance        Float    @default(0)
+  devise         String   @default("XOF")
   montantPlafond Float
-  isActive       Boolean       @default(false)
-  compteId       Int          @unique
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  isActive       Boolean  @default(false)
+  compteId       Int      @unique
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  compte         Compte        @relation(fields: [compteId], references: [id])
-  activations    Activation[]
-  transactions   Transaction[]
+  compte       Compte        @relation(fields: [compteId], references: [id])
+  activations  Activation[]
+  transactions Transaction[]
 
   @@map("portefeuilles")
 }
@@ -224,23 +225,23 @@ model Payment {
   updatedAt   DateTime      @updatedAt
 
   // Relations
-  compte      Compte        @relation(fields: [compteId], references: [id])
-  operateur   Operateur     @relation(fields: [operateurId], references: [id])
+  compte    Compte    @relation(fields: [compteId], references: [id])
+  operateur Operateur @relation(fields: [operateurId], references: [id])
 
   @@map("payments")
 }
 
 model Activation {
-  id             Int          @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   code           String
   porteFeuilleId Int
-  expiration     Boolean      @default(false)
-  isActive       Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  expiration     Boolean  @default(false)
+  isActive       Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   // Relations
-  porteFeuille   PorteFeuille @relation(fields: [porteFeuilleId], references: [id])
+  porteFeuille PorteFeuille @relation(fields: [porteFeuilleId], references: [id])
 
   @@map("activations")
 }
@@ -255,7 +256,7 @@ model Notification {
   updatedAt DateTime @updatedAt
 
   // Relations
-  compte    Compte   @relation(fields: [compteId], references: [id])
+  compte Compte @relation(fields: [compteId], references: [id])
 
   @@map("notifications")
 }

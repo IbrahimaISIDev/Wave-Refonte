@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import compression from 'compression';
 import { CompteService } from './services/CompteService.js';
 import { NotificationService } from './services/NotificationService.js';
 import CompteController from "./controllers/CompteController.js";
@@ -27,6 +28,7 @@ const io = new Server(httpServer, {
 const prisma = new PrismaClient();
 app.use(express.json());
 app.use(cors());
+app.use(compression());
 io.on("connection", (socket) => {
     console.log("Client connected:", socket.id);
     socket.on("join", (compteId) => {
@@ -41,6 +43,9 @@ const compteService = new CompteService(io);
 const notificationService = new NotificationService(io);
 const compteController = new CompteController(compteService);
 const BASE_URL = process.env.BASE_URL || "/api/v1";
+app.get('/api/v1/test', (req, res) => {
+    res.json({ message: 'API is working!' });
+});
 app.use(`${BASE_URL}/comptes`, CompteRoute(compteController));
 app.use(`${BASE_URL}/actor/clients`, ClientRoute());
 app.use(`${BASE_URL}/clients/notifications`, NotificationRoute(notificationService));

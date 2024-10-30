@@ -3,6 +3,9 @@ import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import utils from "../utils/utils.js";
 import { uploadImage } from "../utils/upload.utils.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { CompteService } from "../services/CompteService.js";
 
 const prisma = new PrismaClient();
 
@@ -217,6 +220,68 @@ class ClientController {
       res.status(500).json({
         message: "Erreur lors de la mise à jour du client",
         error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  }
+
+  // Méthode de connexion du client
+  public static async loginClient(req: Request, res: Response): Promise<void> {
+    try {
+      const { phone, secretCode } = req.body;
+
+      // Validation des entrées
+      if (!phone || !secretCode) {
+        res
+          .status(400)
+          .json({ message: "Numéro de téléphone et code secret requis" });
+        return;
+      }
+
+      // Trouver le compte par numéro de téléphone
+      const compte = await prisma.compte.findUnique({
+        where: { phone },
+      });
+
+      if (!compte) {
+        res.status(401).json({ message: "Identifiants invalides" });
+        return;
+      }
+
+      // Comparer le code secret fourni avec le code secret stocké dans la base de données
+      const isSecretCodeValid = await bcrypt.compare(
+        secretCode,
+        compte.secretCode
+      ); // Supposons que 'secretCode' soit le champ dans votre modèle
+      if (!isSecretCodeValid) {
+        res.status(401).json({ message: "Identifiants invalides" });
+        return;
+      }
+
+      // Générer un token JWT
+      const token = jwt.sign(
+        { id: compte.id, role: compte.role },
+        process.env.JWT_SECRET!,
+        { expiresIn: process.env.JWT_EXPIRES_IN }
+      );
+
+      // Retourner la réponse de succès avec le token et les informations de l'utilisateur
+      res.status(200).json({
+        message: "Connexion réussie",
+        token,
+        user: {
+          id: compte.id,
+          login: compte.login,
+          firstName: compte.firstName,
+          lastName: compte.lastName,
+          phone: compte.phone,
+          role: compte.role,
+        },
+      });
+    } catch (error) {
+      console.error("Erreur lors de la connexion du client:", error);
+      res.status(500).json({
+        message: "Erreur lors de la connexion",
+        error: error instanceof Error ? error.message : "Erreur inconnue",
       });
     }
   }

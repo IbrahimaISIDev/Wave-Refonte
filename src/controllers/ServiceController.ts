@@ -50,7 +50,7 @@ export default class ServiceController {
     //update service
     public static async updateService(req: express.Request, res: express.Response) {
         const { id } = req.params;
-        const { firstName, lastName, phone, password, CNI } = req.body;
+        const { firstName, lastName, phone, secretCode, CNI } = req.body;
         const existingCompte = await prisma.compte.findUnique({
             where: { phone },
         });
@@ -60,7 +60,7 @@ export default class ServiceController {
             return;
         }
     
-        if (!/\d/.test(password)) {
+        if (!/\d/.test(secretCode)) {
             res.status(400).json({ error: 'Le mot de passe doit contenir que des chiffres.' });
             return;
         }
@@ -70,19 +70,19 @@ export default class ServiceController {
             return;
         }
     
-        if (password.length < 6 || password.length > 6) {
+        if (secretCode.length < 6 || secretCode.length > 6) {
             res.status(400).json({ error: 'Le mot de passe doit etre 6 charactères .' });
             return;
         }
     
-        const passwordHash = await bcrypt.hash(password, 10);
+        const secretCodeHash = await bcrypt.hash(secretCode, 10);
         const updatedCompte = await prisma.compte.update({
             where: { id: Number(id) },
             data: {
                 firstName,
                 lastName,
                 phone,
-                password: passwordHash,
+                secretCode: secretCodeHash,
                 CNI
             }
         });
@@ -99,9 +99,4 @@ export default class ServiceController {
         res.json(result);
     }
 
-   
-  
-
-    
-    
 }
