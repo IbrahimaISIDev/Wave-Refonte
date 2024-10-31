@@ -32,163 +32,164 @@ export class CompteService {
   constructor(io: SocketServer) {
     this.io = io;
   }
-  // Méthode privée pour générer le QR code  // Méthode privée pour générer le QR code
-  private async generateAndUploadQRCode(compte: Compte): Promise<string> {
-    try {
-      // Données à encoder dans le QR code
-      const qrData = {
-        id: compte.id,
-        firstName: compte.firstName,
-        lastName: compte.lastName,
-        phone: compte.phone,
-        type: "PAYMENT_QR",
-        timestamp: new Date().toISOString(), // Pour l'unicité
-      };
+ // Méthode de génération et de téléversement de QR code
+// Méthode pour générer et uploader le QR code
+private async generateAndUploadQRCode(compte: Compte): Promise<string> {
+  try {
+    // Données à encoder dans le QR code
+    const qrData = {
+      id: compte.id,
+      firstName: compte.firstName,
+      lastName: compte.lastName,
+      phone: compte.phone,
+      type: "PAYMENT_QR",
+      timestamp: new Date().toISOString(), // Pour l'unicité
+    };
 
-      // Générer le QR code en buffer
-      const qrBuffer = await QRCode.toBuffer(JSON.stringify(qrData), {
-        errorCorrectionLevel: "H",
-        margin: 1,
-        width: 300,
-        color: {
-          dark: "#000000",
-          light: "#ffffff",
+    // Générer le QR code en tant que buffer
+    const qrBuffer = await QRCode.toBuffer(JSON.stringify(qrData), {
+      errorCorrectionLevel: "H",
+      margin: 1,
+      width: 300,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+    });
+
+    // Upload du QR code vers Cloudinary
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: "qr-codes",
+          public_id: `qr-code-${compte.id}`,
+          format: "png",
+          transformation: [
+            { quality: "auto:best" },
+            { fetch_format: "auto" },
+          ],
+        },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result!.secure_url);
+        }
+      );
+
+      // Convertir le buffer en flux lisible et l'envoyer dans le flux de téléchargement
+      const readableStream = new Readable({
+        read() {
+          this.push(qrBuffer);
+          this.push(null);
         },
       });
 
-      // Upload vers Cloudinary
-      return new Promise((resolve, reject) => {
-        const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder: "qr-codes",
-            public_id: `qr-code-${compte.id}`,
-            format: "png",
-            transformation: [
-              { quality: "auto:best" },
-              { fetch_format: "auto" },
-            ],
-          },
-          (error, result) => {
-            if (error) reject(error);
-            else resolve(result!.secure_url);
-          }
-        );
+      readableStream.pipe(uploadStream);
+    });
+  } catch (error) {
+    console.error("Erreur lors de la génération/upload du QR code:", error);
+    throw error;
+  }
+}
 
-        const readableStream = new Readable({
-          read() {
-            this.push(qrBuffer);
-            this.push(null);
-          },
-        });
+// Méthode pour créer un compte
+async createCompte(data: {
+  login: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  CNI: string;
+  secretCode: string;
+  password: string;
+  role?: Role;
+}) {
+  const { login, secretCode, phone } = data;
 
-        readableStream.pipe(uploadStream);
-      });
-    } catch (error) {
-      console.error("Erreur lors de la génération/upload du QR code:", error);
-      throw error;
-    }
+  // Vérifier l'unicité du login et du téléphone
+  const existingCompteByLogin = await prisma.compte.findUnique({
+    where: { login },
+  });
+  if (existingCompteByLogin) throw new Error("Ce login est déjà utilisé");
+
+  const existingCompteByPhone = await prisma.compte.findUnique({
+    where: { phone },
+  });
+  if (existingCompteByPhone) throw new Error("Ce numéro de téléphone est déjà utilisé");
+
+  // Vérifier le format du code secret
+  if (secretCode.length !== 4 || !/^\d+$/.test(secretCode)) {
+    throw new Error("Le code secret doit être un nombre de 4 chiffres.");
   }
 
-  async createCompte(data: {
-    login: string;
-    firstName: string;
-    lastName: string;
-    phone: string;
-    CNI: string;
-    secretCode: string;
-    password: string;
-    role?: Role;
-  }) {
-    const { login, secretCode, phone } = data;
+  // Hasher le code secret
+  const salt = await bcrypt.genSalt(10);
+  const hashedSecretCode = await bcrypt.hash(secretCode, salt);
 
-    // Vérifier que le login n'est pas déjà utilisé
-    const existingCompteByLogin = await prisma.compte.findUnique({
-      where: { login },
-    });
-    if (existingCompteByLogin) throw new Error("Ce login est déjà utilisé");
-
-    // Vérifier que le numéro de téléphone n'est pas déjà utilisé
-    const existingCompteByPhone = await prisma.compte.findUnique({
-      where: { phone },
-    });
-    if (existingCompteByPhone)
-      throw new Error("Ce numéro de téléphone est déjà utilisé");
-
-    // Vérifier que le code secret est exactement de 4 chiffres
-    if (secretCode.length !== 4 || !/^\d+$/.test(secretCode)) {
-      throw new Error("Le code secret doit être un nombre de 4 chiffres.");
-    }
-
-    // Hasher le code secret
-    const salt = await bcrypt.genSalt(10);
-    const hashedSecretCode = await bcrypt.hash(secretCode, salt);
-
-    try {
-      const result = await prisma.$transaction(async (prisma) => {
-        // 1. Créer le compte initial
-        const newCompte = await prisma.compte.create({
-          data: {
-            login: data.login,
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
-            CNI: data.CNI,
-            secretCode: hashedSecretCode,
-            password: data.password,
-            role: data.role || "CLIENT",
-            
-          },
-        });
-
-        // 2. Générer et uploader le QR code
-        const qrCodeUrl = await this.generateAndUploadQRCode(newCompte);
-
-        // 3. Mettre à jour le compte avec l'URL du QR code
-        const updatedCompte = await prisma.compte.update({
-          where: { id: newCompte.id },
-          data: { qrCodeUrl },
-        });
-
-        // 4. Créer le portefeuille
-        const porteFeuille = await prisma.porteFeuille.create({
-          data: {
-            compteId: newCompte.id,
-            balance: 0,
-            devise: "XOF",
-            montantPlafond: 2000000.0,
-            isActive: false,
-          },
-        });
-
-        // 5. Envoyer le SMS de bienvenue avec le lien du QR code
-        await this.sendWelcomeSMSWithQR(updatedCompte, qrCodeUrl);
-
-        // 6. Créer la notification
-        await prisma.notification.create({
-          data: {
-            content: `Bienvenue ${newCompte.firstName} ! Votre compte a été créé avec succès. Votre QR code personnel est disponible dans votre profil.`,
-            compteId: newCompte.id,
-            type: "WELCOME",
-          },
-        });
-
-        return { newCompte: updatedCompte, porteFeuille };
+  try {
+    const result = await prisma.$transaction(async (prisma) => {
+      // Créer le compte initial
+      const newCompte = await prisma.compte.create({
+        data: {
+          login: data.login,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          CNI: data.CNI,
+          secretCode: hashedSecretCode,
+          password: data.password,
+          role: data.role || "CLIENT",
+        },
       });
 
-      // Générer le token
-      const token = this.generateToken(result.newCompte.id);
-      const { secretCode: _, ...compteWithoutSecretCode } = result.newCompte;
+      // Générer et uploader le QR code
+      const qrCodeUrl = await this.generateAndUploadQRCode(newCompte);
 
-      return {
-        compte: compteWithoutSecretCode,
-        porteFeuille: result.porteFeuille,
-        token,
-      };
-    } catch (error) {
-      console.error("Erreur lors de la création du compte:", error);
-      throw new Error("Erreur lors de la création du compte");
-    }
+      // Mettre à jour le compte avec l'URL du QR code
+      const updatedCompte = await prisma.compte.update({
+        where: { id: newCompte.id },
+        data: { qrCodeUrl },
+      });
+
+      // Créer le portefeuille associé
+      const porteFeuille = await prisma.porteFeuille.create({
+        data: {
+          compteId: newCompte.id,
+          balance: 0,
+          devise: "XOF",
+          montantPlafond: 2000000.0,
+          isActive: false,
+        },
+      });
+
+      // Envoyer le SMS de bienvenue avec le QR code
+      await this.sendWelcomeSMSWithQR(updatedCompte, qrCodeUrl);
+
+      // Créer la notification de bienvenue
+      await prisma.notification.create({
+        data: {
+          content: `Bienvenue ${newCompte.firstName} ! Votre compte a été créé avec succès. Votre QR code personnel est disponible dans votre profil.`,
+          compteId: newCompte.id,
+          type: "WELCOME",
+        },
+      });
+
+      return { newCompte: updatedCompte, porteFeuille };
+    });
+
+    // Générer et retourner le token
+    const token = this.generateToken(result.newCompte.id);
+    const { secretCode: _, ...compteWithoutSecretCode } = result.newCompte;
+
+    return {
+      compte: compteWithoutSecretCode,
+      porteFeuille: result.porteFeuille,
+      token,
+    };
+  } catch (error) {
+    console.error("Erreur lors de la création du compte:", error);
+    throw new Error("Erreur lors de la création du compte");
   }
+}
+
 
   private async sendWelcomeSMSWithQR(compte: Compte, qrCodeUrl: string) {
     try {
