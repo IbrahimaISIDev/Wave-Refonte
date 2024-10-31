@@ -1,31 +1,22 @@
 {
   "compilerOptions": {
-    /* Language and Environment */
     "target": "ES2020",
     "lib": ["es6", "dom", "esnext"],
-
-    /* Modules */
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
+    "module": "ESNext",
+    "moduleResolution": "node",
     "rootDir": "./src",
-    "baseUrl": "./",
+    "baseUrl": "./src",
     "paths": {
-      "*": ["src/types/*"]
+      "*": ["types/*"]
     },
-    "typeRoots": ["node_modules/@types", "src/types"],
+    "typeRoots": ["./node_modules/@types", "./src/types"],
     "types": ["node"],
-
-    /* Emit */
     "outDir": "./dist",
     "removeComments": true,
     "sourceMap": true,
-
-    /* Interop Constraints */
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
-
-    /* Type Checking */
     "strict": true,
     "noImplicitAny": false,
     "strictNullChecks": true,
@@ -34,8 +25,6 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noImplicitReturns": true,
-
-    /* Completeness */
     "skipLibCheck": true
   },
   "include": ["src/**/*"],
