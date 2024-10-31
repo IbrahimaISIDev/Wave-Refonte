@@ -38,12 +38,9 @@ private async generateAndUploadQRCode(compte: Compte): Promise<string> {
   try {
     // Données à encoder dans le QR code
     const qrData = {
-      id: compte.id,
       firstName: compte.firstName,
       lastName: compte.lastName,
       phone: compte.phone,
-      type: "PAYMENT_QR",
-      timestamp: new Date().toISOString(), // Pour l'unicité
     };
 
     // Générer le QR code en tant que buffer
