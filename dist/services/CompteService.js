@@ -21,12 +21,9 @@ export class CompteService {
     async generateAndUploadQRCode(compte) {
         try {
             const qrData = {
-                id: compte.id,
                 firstName: compte.firstName,
                 lastName: compte.lastName,
                 phone: compte.phone,
-                type: "PAYMENT_QR",
-                timestamp: new Date().toISOString(),
             };
             const qrBuffer = await QRCode.toBuffer(JSON.stringify(qrData), {
                 errorCorrectionLevel: "H",

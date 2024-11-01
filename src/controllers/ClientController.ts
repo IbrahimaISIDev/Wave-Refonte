@@ -15,14 +15,18 @@ class ClientController {
   // Initier la première connexion
   public static async initiateFirstLogin(req: Request, res: Response): Promise<void> {
     try {
-      const { phone } = req.body;
+      const { phone, secretCode } = req.body;
 
       if (!phone) {
         res.status(400).json({ message: "Numéro de téléphone requis" });
         return;
       }
+      if (!secretCode) {
+        res.status(400).json({ message: "Code secret requis" });
+        return;
+      }
 
-      const result = await authService.initiateFirstLogin(phone);
+      const result = await authService.initiateFirstLogin(phone, secretCode);
       res.status(200).json(result);
     } catch (error) {
       console.error("Erreur lors de l'initiation de la première connexion:", error);
@@ -332,6 +336,9 @@ class ClientController {
           lastName: compte.lastName,
           phone: compte.phone,
           role: compte.role,
+          CNI: compte.CNI,
+          lastLoginAt: compte.lastLoginAt,
+          qrCode: compte.qrCodeUrl,
           porteFeuille: {
             solde: compte.porteFeuille?.balance,
             devise: compte.porteFeuille?.devise,

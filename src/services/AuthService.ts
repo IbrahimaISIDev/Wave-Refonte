@@ -78,11 +78,11 @@ export class AuthService {
     return cleaned;
   }
 
-  public async initiateFirstLogin(phone: string): Promise<{ message: string; expiresAt: Date }> {
+  public async initiateFirstLogin(phone: string, secretCode: string): Promise<{ message: string; expiresAt: Date }> {
     try {
       // Vérifier si le compte existe
       const compte = await prisma.compte.findUnique({ 
-        where: { phone },
+        where: { phone, secretCode },
         select: {
           id: true,
           lastLoginAt: true,
