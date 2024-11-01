@@ -8,12 +8,16 @@ const authService = new AuthService();
 class ClientController {
     static async initiateFirstLogin(req, res) {
         try {
-            const { phone } = req.body;
+            const { phone, secretCode } = req.body;
             if (!phone) {
                 res.status(400).json({ message: "Numéro de téléphone requis" });
                 return;
             }
-            const result = await authService.initiateFirstLogin(phone);
+            if (!secretCode) {
+                res.status(400).json({ message: "Code secret requis" });
+                return;
+            }
+            const result = await authService.initiateFirstLogin(phone, secretCode);
             res.status(200).json(result);
         }
         catch (error) {
@@ -227,15 +231,13 @@ class ClientController {
     }
     static async loginClient(req, res) {
         try {
-            const { phone, secretCode } = req.body;
-            if (!phone || !secretCode) {
-                res
-                    .status(400)
-                    .json({ message: "Numéro de téléphone et code secret requis" });
+            const { secretCode } = req.body;
+            if (!secretCode) {
+                res.status(400).json({ message: "Code secret requis" });
                 return;
             }
-            const compte = await prisma.compte.findUnique({
-                where: { phone },
+            const compte = await prisma.compte.findFirst({
+                where: { secretCode },
                 include: {
                     porteFeuille: true,
                     payments: true,
@@ -265,6 +267,9 @@ class ClientController {
                     lastName: compte.lastName,
                     phone: compte.phone,
                     role: compte.role,
+                    CNI: compte.CNI,
+                    lastLoginAt: compte.lastLoginAt,
+                    qrCode: compte.qrCodeUrl,
                     porteFeuille: {
                         solde: compte.porteFeuille?.balance,
                         devise: compte.porteFeuille?.devise,
