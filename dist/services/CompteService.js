@@ -24,6 +24,7 @@ export class CompteService {
                 firstName: compte.firstName,
                 lastName: compte.lastName,
                 phone: compte.phone,
+                photo: compte.photo,
             };
             const qrBuffer = await QRCode.toBuffer(JSON.stringify(qrData), {
                 errorCorrectionLevel: "H",
@@ -88,7 +89,9 @@ export class CompteService {
                         firstName: data.firstName,
                         lastName: data.lastName,
                         phone: data.phone,
-                        CNI: data.CNI,
+                        CNI_RECTO: data.CNI_RECTO,
+                        CNI_VERSO: data.CNI_VERSO,
+                        photo: data.photo,
                         secretCode: hashedSecretCode,
                         password: data.password,
                         role: data.role || "CLIENT",

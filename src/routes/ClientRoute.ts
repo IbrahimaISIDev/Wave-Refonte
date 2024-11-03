@@ -9,8 +9,7 @@ const ClientRoute = () => {
 
   // Routes publiques
   router.get("/", ClientController.getAllClients);
-  router.get("/:id", ClientController.getClientById);
-  router.get("/user/:compteId", ClientController.getClientByCompteId);
+  router.get("/getClient/:id", Middleware.auth, ClientController.getClientById);
 
   // Routes protégées
   router.post(
@@ -26,8 +25,8 @@ const ClientRoute = () => {
     ClientController.updateClient
   );
   router.post("/login", ClientController.loginClient);
-  router.post("/first-login/initiate", ClientController.initiateFirstLogin);
-  router.post("/first-login/validate", ClientController.validateFirstLogin);
+  router.post("/logout", Middleware.auth, ClientController.logout);
+  router.post("/validateSmsCode", ClientController.validateSmsCode);
 
   return router; // Return the router instance
 };

@@ -5,13 +5,12 @@ import { upload } from "../middlewares/upload.middleware.js";
 const ClientRoute = () => {
     const router = Router();
     router.get("/", ClientController.getAllClients);
-    router.get("/:id", ClientController.getClientById);
-    router.get("/user/:compteId", ClientController.getClientByCompteId);
+    router.get("/getClient/:id", Middleware.auth, ClientController.getClientById);
     router.post("/", Middleware.auth, upload.single("photo"), ClientController.createClient);
     router.put("/:id", Middleware.auth, upload.single("photo"), ClientController.updateClient);
     router.post("/login", ClientController.loginClient);
-    router.post("/first-login/initiate", ClientController.initiateFirstLogin);
-    router.post("/first-login/validate", ClientController.validateFirstLogin);
+    router.post("/logout", Middleware.auth, ClientController.logout);
+    router.post("/validateSmsCode", ClientController.validateSmsCode);
     return router;
 };
 export default ClientRoute;

@@ -11,7 +11,6 @@ export class AuthService {
   private readonly CODE_EXPIRATION = 5 * 60 * 1000;
 
   constructor() {
-    // Vérification de la configuration Twilio
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const phoneNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -27,112 +26,62 @@ export class AuthService {
     return Math.floor(1000 + Math.random() * 9000).toString();
   }
 
-  private async sendTemporaryCodeBySMS(phone: string, code: string): Promise<void> {
+  async sendTemporaryCodeBySMS(phone: string): Promise<string> {
+    const code = this.generateTemporaryCode();
     if (!this.twilioClient) {
       throw new Error("La configuration Twilio n'est pas disponible");
     }
 
     try {
-      // Normaliser le numéro de téléphone
       const formattedPhone = this.formatPhoneNumber(phone);
-
-      // Envoyer le SMS
       await this.twilioClient.messages.create({
         body: `Votre code de connexion est: ${code}. Ce code est valable pendant 5 minutes.`,
         to: formattedPhone,
         from: process.env.TWILIO_PHONE_NUMBER,
       });
 
-      console.log(`SMS envoyé avec succès à ${formattedPhone}`);
-    } catch (error) {
-      console.error("Erreur détaillée Twilio:", error);
-
-      if (error instanceof Error) { // Vérifie si l'erreur est du type Error
-        const err = error as any; // Pour accéder à `code` sans conflit de type
-
-        if (err.code === 21211) {
-          throw new Error("Numéro de téléphone invalide");
-        } else if (err.code === 21608) {
-          throw new Error("Numéro non vérifié dans Twilio");
-        } else if (err.code === 20003) {
-          throw new Error("Identifiants Twilio non autorisés");
-        } else {
-          throw new Error(`Erreur d'envoi SMS: ${err.message}`);
-        }
-      } else {
-        throw new Error("Erreur inconnue lors de l'envoi du SMS");
-      }
-    }
-  }
-
-  // Formater le numéro de téléphone pour Twilio
-  private formatPhoneNumber(phone: string): string {
-    // Supprimer tous les caractères non numériques
-    let cleaned = phone.replace(/\D/g, '');
-    
-    // Ajouter le + si nécessaire
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+' + cleaned;
-    }
-    
-    return cleaned;
-  }
-
-  public async initiateFirstLogin(phone: string): Promise<{ message: string; expiresAt: Date }> {
-    try {
-      // Vérifier si le compte existe
-      const compte = await prisma.compte.findUnique({ 
-        where: { phone },
-        select: {
-          id: true,
-          lastLoginAt: true,
-          status: true
-        }
-      });
-
-      if (!compte) {
-        throw new Error("Compte non trouvé");
-      }
-
-      // Vérifier si c'est la première connexion
-      if (compte.lastLoginAt) {
-        throw new Error("Ce n'est pas votre première connexion. Veuillez utiliser votre code secret.");
-      }
-
-      // Générer et sauvegarder le code temporaire
-      const temporaryCode = this.generateTemporaryCode();
-      const expiresAt = new Date(Date.now() + this.CODE_EXPIRATION);
-
-      // Supprimer les anciens codes non utilisés pour ce numéro
-      await prisma.temporaryCode.deleteMany({
-        where: {
-          phone,
-          used: false
-        }
-      });
-
-      // Créer le nouveau code
       await prisma.temporaryCode.create({
         data: {
-          code: temporaryCode,
           phone,
-          expiresAt,
+          code,
+          expiresAt: new Date(Date.now() + this.CODE_EXPIRATION),
+          used: false,
         },
       });
 
-      // Envoyer le SMS
-      await this.sendTemporaryCodeBySMS(phone, temporaryCode);
-
-      console.log(`Code temporaire généré pour ${phone}: ${temporaryCode}`);
-
-      return {
-        message: "Code temporaire envoyé par SMS",
-        expiresAt,
-      };
+      return code;
     } catch (error) {
-      console.error("Erreur complète:", error);
-      throw error;
+      console.error("Erreur détaillée Twilio:", error);
+      throw new Error("Erreur d'envoi SMS");
     }
+  }
+
+  async validateSmsCode(phone: string, code: string): Promise<boolean> {
+    const codeRecord = await prisma.temporaryCode.findFirst({
+      where: {
+        phone,
+        code,
+        expiresAt: { gt: new Date() },
+        used: false,
+      },
+    });
+
+    if (!codeRecord) return false;
+
+    await prisma.temporaryCode.update({
+      where: { id: codeRecord.id },
+      data: { used: true },
+    });
+
+    return true;
+  }
+
+  private formatPhoneNumber(phone: string): string {
+    let cleaned = phone.replace(/\D/g, '');
+    if (!cleaned.startsWith('+')) {
+      cleaned = '+' + cleaned;
+    }
+    return cleaned;
   }
 
   // Valide le code temporaire et effectue la première connexion
@@ -283,3 +232,5 @@ export class AuthService {
     };
   }
 }
+
+

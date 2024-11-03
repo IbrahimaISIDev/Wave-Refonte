@@ -6,47 +6,6 @@ import { AuthService } from "../services/AuthService.js";
 const prisma = new PrismaClient();
 const authService = new AuthService();
 class ClientController {
-    static async initiateFirstLogin(req, res) {
-        try {
-            const { phone } = req.body;
-            if (!phone) {
-                res.status(400).json({ message: "Numéro de téléphone requis" });
-                return;
-            }
-            const result = await authService.initiateFirstLogin(phone);
-            res.status(200).json(result);
-        }
-        catch (error) {
-            console.error("Erreur lors de l'initiation de la première connexion:", error);
-            res.status(500).json({
-                message: "Erreur lors de l'initiation de la première connexion",
-                error: error instanceof Error ? error.message : "Erreur inconnue",
-            });
-        }
-    }
-    static async validateFirstLogin(req, res) {
-        try {
-            const { phone, temporaryCode } = req.body;
-            if (!phone || !temporaryCode) {
-                res.status(400).json({
-                    message: "Numéro de téléphone et code temporaire requis",
-                });
-                return;
-            }
-            const result = await authService.validateFirstLogin(phone, temporaryCode);
-            res.status(200).json({
-                message: "Première connexion réussie",
-                ...result,
-            });
-        }
-        catch (error) {
-            console.error("Erreur lors de la validation de la première connexion:", error);
-            res.status(500).json({
-                message: "Erreur lors de la validation de la première connexion",
-                error: error instanceof Error ? error.message : "Erreur inconnue",
-            });
-        }
-    }
     static async getAllClients(req, res) {
         try {
             const clients = await prisma.client.findMany({
@@ -58,7 +17,8 @@ class ClientController {
                             firstName: true,
                             lastName: true,
                             phone: true,
-                            CNI: true,
+                            CNI_VERSO: true,
+                            CNI_RECTO: true,
                             status: true,
                             role: true,
                             porteFeuille: true,
@@ -91,7 +51,9 @@ class ClientController {
                             firstName: true,
                             lastName: true,
                             phone: true,
-                            CNI: true,
+                            CNI_VERSO: true,
+                            CNI_RECTO: true,
+                            photo: true,
                             status: true,
                             role: true,
                             porteFeuille: true,
@@ -109,43 +71,6 @@ class ClientController {
         }
         catch (error) {
             console.error("Erreur lors de la récupération du client:", error);
-            res.status(500).json({
-                message: "Erreur lors de la récupération du client",
-                error: error instanceof Error ? error.message : "Unknown error",
-            });
-        }
-    }
-    static async getClientByCompteId(req, res) {
-        try {
-            const { compteId } = req.params;
-            const client = await prisma.client.findUnique({
-                where: { compteId: Number(compteId) },
-                include: {
-                    compte: {
-                        select: {
-                            id: true,
-                            login: true,
-                            firstName: true,
-                            lastName: true,
-                            phone: true,
-                            CNI: true,
-                            status: true,
-                            role: true,
-                            porteFeuille: true,
-                            createdAt: true,
-                            updatedAt: true,
-                        },
-                    },
-                },
-            });
-            if (!client) {
-                res.status(404).json({ message: "Client non trouvé" });
-                return;
-            }
-            res.status(200).json({ data: client });
-        }
-        catch (error) {
-            console.error("Erreur lors de la récupération du client par compteId:", error);
             res.status(500).json({
                 message: "Erreur lors de la récupération du client",
                 error: error instanceof Error ? error.message : "Unknown error",
@@ -175,7 +100,6 @@ class ClientController {
             const newClient = await prisma.client.create({
                 data: {
                     compteId: Number(compteId),
-                    photo: cloudinaryResponse.secure_url,
                 },
                 include: {
                     compte: true,
@@ -205,9 +129,7 @@ class ClientController {
             const cloudinaryResponse = await uploadImage(photoFile.path);
             const updatedClient = await prisma.client.update({
                 where: { id: Number(id) },
-                data: {
-                    photo: cloudinaryResponse.secure_url,
-                },
+                data: {},
                 include: {
                     compte: true,
                 },
@@ -229,9 +151,7 @@ class ClientController {
         try {
             const { phone, secretCode } = req.body;
             if (!phone || !secretCode) {
-                res
-                    .status(400)
-                    .json({ message: "Numéro de téléphone et code secret requis" });
+                res.status(400).json({ message: "Numéro de téléphone et code secret requis" });
                 return;
             }
             const compte = await prisma.compte.findUnique({
@@ -254,6 +174,44 @@ class ClientController {
                 res.status(401).json({ message: "Identifiants invalides" });
                 return;
             }
+            await authService.sendTemporaryCodeBySMS(phone);
+            res.status(200).json({
+                message: "Code de vérification envoyé par SMS. Veuillez confirmer pour finaliser la connexion.",
+            });
+        }
+        catch (error) {
+            console.error("Erreur lors de la connexion du client:", error);
+            res.status(500).json({
+                message: "Erreur lors de la connexion",
+                error: error instanceof Error ? error.message : "Erreur inconnue",
+            });
+        }
+    }
+    static async validateSmsCode(req, res) {
+        try {
+            const { phone, smsCode } = req.body;
+            if (!phone || !smsCode) {
+                res.status(400).json({ message: "Numéro de téléphone et code SMS requis" });
+                return;
+            }
+            const isCodeValid = await authService.validateSmsCode(phone, smsCode);
+            if (!isCodeValid) {
+                res.status(401).json({ message: "Code SMS invalide ou expiré" });
+                return;
+            }
+            const compte = await prisma.compte.findUnique({
+                where: { phone },
+                include: {
+                    porteFeuille: true,
+                    payments: true,
+                    sentTransferts: true,
+                    receivedTransferts: true,
+                    notifications: true,
+                    transactions: true,
+                },
+            });
+            if (!compte)
+                throw new Error("Compte non trouvé");
             const token = jwt.sign({ id: compte.id, role: compte.role }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN });
             res.status(200).json({
                 message: "Connexion réussie",
@@ -265,6 +223,11 @@ class ClientController {
                     lastName: compte.lastName,
                     phone: compte.phone,
                     role: compte.role,
+                    CNI_RECTO: compte.CNI_RECTO,
+                    CNI_VERSO: compte.CNI_VERSO,
+                    photo: compte.photo,
+                    lastLoginAt: compte.lastLoginAt,
+                    qrCode: compte.qrCodeUrl,
                     porteFeuille: {
                         solde: compte.porteFeuille?.balance,
                         devise: compte.porteFeuille?.devise,
@@ -280,9 +243,45 @@ class ClientController {
             });
         }
         catch (error) {
-            console.error("Erreur lors de la connexion du client:", error);
+            console.error("Erreur lors de la validation du code SMS:", error);
             res.status(500).json({
-                message: "Erreur lors de la connexion",
+                message: "Erreur lors de la validation",
+                error: error instanceof Error ? error.message : "Erreur inconnue",
+            });
+        }
+    }
+    static async logout(req, res) {
+        try {
+            const authHeader = req.headers.authorization;
+            console.log(authHeader);
+            const token = authHeader && authHeader.split(" ")[1];
+            console.log(token);
+            if (!token) {
+                res.status(400).json({ message: "Token non fourni" });
+                return;
+            }
+            const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+            console.log(decodedToken);
+            const expiresAt = decodedToken.exp ? new Date(decodedToken.exp * 1000) : null;
+            console.log(expiresAt);
+            if (expiresAt) {
+                await prisma.blackListToken.create({
+                    data: {
+                        token,
+                        expiresAt,
+                    },
+                });
+                res.status(200).json({ message: "Déconnexion réussie et token ajouté à la liste noire" });
+            }
+            else {
+                res.status(500).json({ message: "Échec de la déconnexion: expiration du token non trouvée" });
+                return;
+            }
+        }
+        catch (error) {
+            console.error("Erreur lors de la déconnexion:", error);
+            res.status(500).json({
+                message: "Erreur lors de la déconnexion",
                 error: error instanceof Error ? error.message : "Erreur inconnue",
             });
         }
