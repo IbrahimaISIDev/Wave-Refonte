@@ -209,5 +209,30 @@ export class CompteService {
             expiresIn: process.env.JWT_EXPIRES_IN || "24h",
         });
     }
+    async getAllComptes() {
+        return await prisma.compte.findMany();
+    }
+    async getCompteById(compteId) {
+        const compte = await prisma.compte.findUnique({
+            where: { id: compteId },
+        });
+        if (!compte) {
+            throw new Error("Compte non trouvé");
+        }
+        return compte;
+    }
+    async updateCompte(compteId, data) {
+        const updatedCompte = await prisma.compte.update({
+            where: { id: compteId },
+            data,
+        });
+        return updatedCompte;
+    }
+    async deleteCompte(compteId) {
+        const compte = await prisma.compte.delete({
+            where: { id: compteId },
+        });
+        return compte;
+    }
 }
 //# sourceMappingURL=CompteService.js.map

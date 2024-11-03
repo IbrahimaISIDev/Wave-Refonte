@@ -23,7 +23,6 @@ class Middleware {
                 return;
             }
 
-            // Extraire le token
             const token = authHeader.split(' ')[1];
             if (!token) {
                 res.status(401).json({ message: "Token non fourni" });

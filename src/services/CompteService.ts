@@ -288,4 +288,40 @@ async createCompte(data: {
       expiresIn: process.env.JWT_EXPIRES_IN || "24h",
     });
   }
+
+  async getAllComptes(): Promise<Compte[]> {
+    return await prisma.compte.findMany();
+  }
+
+  // Méthode pour récupérer les informations d'un compte par ID
+  async getCompteById(compteId: number): Promise<Compte | null> {
+    const compte = await prisma.compte.findUnique({
+      where: { id: compteId },
+    });
+
+    if (!compte) {
+      throw new Error("Compte non trouvé");
+    }
+
+    return compte;
+  }
+
+  // Méthode pour modifier un compte
+  async updateCompte(compteId: number, data: Partial<Compte>): Promise<Compte> {
+    const updatedCompte = await prisma.compte.update({
+      where: { id: compteId },
+      data,
+    });
+
+    return updatedCompte;
+  }
+
+  // Méthode pour supprimer un compte
+  async deleteCompte(compteId: number): Promise<Compte> {
+    const compte = await prisma.compte.delete({
+      where: { id: compteId },
+    });
+  
+    return compte;
+  }
 }

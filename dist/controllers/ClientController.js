@@ -1,5 +1,4 @@
 import { PrismaClient } from "@prisma/client";
-import { uploadImage } from "../utils/upload.utils.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { AuthService } from "../services/AuthService.js";
@@ -79,11 +78,6 @@ class ClientController {
     static async createClient(req, res) {
         try {
             const { compteId } = req.body;
-            const photoFile = req.file;
-            if (!photoFile) {
-                res.status(400).json({ message: "Photo requise" });
-                return;
-            }
             const compte = await prisma.compte.findUnique({
                 where: { id: Number(compteId) },
             });
@@ -95,7 +89,6 @@ class ClientController {
                 res.status(400).json({ message: "Le compte doit être de type CLIENT" });
                 return;
             }
-            const cloudinaryResponse = await uploadImage(photoFile.path);
             const newClient = await prisma.client.create({
                 data: {
                     compteId: Number(compteId),
@@ -120,12 +113,6 @@ class ClientController {
     static async updateClient(req, res) {
         try {
             const { id } = req.params;
-            const photoFile = req.file;
-            if (!photoFile) {
-                res.status(400).json({ message: "Photo requise" });
-                return;
-            }
-            const cloudinaryResponse = await uploadImage(photoFile.path);
             const updatedClient = await prisma.client.update({
                 where: { id: Number(id) },
                 data: {},
