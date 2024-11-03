@@ -41,7 +41,6 @@ private async generateAndUploadQRCode(compte: Compte): Promise<string> {
       firstName: compte.firstName,
       lastName: compte.lastName,
       phone: compte.phone,
-      photo: compte.photo,
     };
 
     // Générer le QR code en tant que buffer
@@ -95,8 +94,7 @@ async createCompte(data: {
   firstName: string;
   lastName: string;
   phone: string;
-  CNI_RECTO: string;
-  CNI_VERSO: string;
+  CNI: string;
   photo: string;
   secretCode: string;
   password: string;
@@ -133,8 +131,7 @@ async createCompte(data: {
           firstName: data.firstName,
           lastName: data.lastName,
           phone: data.phone,
-          CNI_RECTO: data.CNI_RECTO,
-          CNI_VERSO: data.CNI_VERSO,
+          CNI: data.CNI,
           photo: data.photo,
           secretCode: hashedSecretCode,
           password: data.password,

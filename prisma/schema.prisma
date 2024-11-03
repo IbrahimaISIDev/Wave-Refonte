@@ -14,8 +14,7 @@ model Compte {
   firstName          String
   lastName           String
   phone              String         @unique
-  CNI_RECTO          String
-  CNI_VERSO          String
+  CNI                String
   photo              String
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt

@@ -1,9 +1,11 @@
 // src/controllers/ClientController.ts
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import utils from "../utils/utils.js";
 import { uploadImage } from "../utils/upload.utils.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { CompteService } from "../services/CompteService.js";
 import { AuthService } from "../services/AuthService.js";
 
 const prisma = new PrismaClient();
@@ -26,8 +28,8 @@ class ClientController {
               firstName: true,
               lastName: true,
               phone: true,
-              CNI_VERSO: true,
-              CNI_RECTO: true,
+              CNI: true,
+              photo: true,
               status: true,
               role: true,
               porteFeuille: true,
@@ -64,8 +66,7 @@ class ClientController {
               firstName: true,
               lastName: true,
               phone: true,
-              CNI_VERSO: true,
-              CNI_RECTO: true,
+              CNI: true,
               photo: true,
               status: true,
               role: true,
@@ -276,8 +277,7 @@ class ClientController {
           lastName: compte.lastName,
           phone: compte.phone,
           role: compte.role,
-          CNI_RECTO: compte.CNI_RECTO,
-          CNI_VERSO: compte.CNI_VERSO,
+          CNI: compte.CNI,
           photo: compte.photo,
           lastLoginAt: compte.lastLoginAt,
           qrCode: compte.qrCodeUrl,
@@ -307,9 +307,7 @@ class ClientController {
     try {
       // Récupération du token JWT depuis les headers d'autorisation
       const authHeader = req.headers.authorization;
-      console.log(authHeader);
       const token = authHeader && authHeader.split(" ")[1];
-      console.log(token);
   
       if (!token) {
         res.status(400).json({ message: "Token non fourni" });
@@ -318,11 +316,9 @@ class ClientController {
   
       // Décodage du token pour obtenir les informations
       const decodedToken = jwt.verify(token, process.env.JWT_SECRET!) as jwt.JwtPayload;
-      console.log(decodedToken);
   
       // Calcul de l'expiration du token
       const expiresAt = decodedToken.exp ? new Date(decodedToken.exp * 1000) : null;
-      console.log(expiresAt);
       if (expiresAt) {
         // Ajout du token à la liste noire dans la base de données
         await prisma.blackListToken.create({

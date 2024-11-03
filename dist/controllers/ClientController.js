@@ -17,8 +17,8 @@ class ClientController {
                             firstName: true,
                             lastName: true,
                             phone: true,
-                            CNI_VERSO: true,
-                            CNI_RECTO: true,
+                            CNI: true,
+                            photo: true,
                             status: true,
                             role: true,
                             porteFeuille: true,
@@ -51,8 +51,7 @@ class ClientController {
                             firstName: true,
                             lastName: true,
                             phone: true,
-                            CNI_VERSO: true,
-                            CNI_RECTO: true,
+                            CNI: true,
                             photo: true,
                             status: true,
                             role: true,
@@ -223,8 +222,7 @@ class ClientController {
                     lastName: compte.lastName,
                     phone: compte.phone,
                     role: compte.role,
-                    CNI_RECTO: compte.CNI_RECTO,
-                    CNI_VERSO: compte.CNI_VERSO,
+                    CNI: compte.CNI,
                     photo: compte.photo,
                     lastLoginAt: compte.lastLoginAt,
                     qrCode: compte.qrCodeUrl,
@@ -253,17 +251,13 @@ class ClientController {
     static async logout(req, res) {
         try {
             const authHeader = req.headers.authorization;
-            console.log(authHeader);
             const token = authHeader && authHeader.split(" ")[1];
-            console.log(token);
             if (!token) {
                 res.status(400).json({ message: "Token non fourni" });
                 return;
             }
             const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-            console.log(decodedToken);
             const expiresAt = decodedToken.exp ? new Date(decodedToken.exp * 1000) : null;
-            console.log(expiresAt);
             if (expiresAt) {
                 await prisma.blackListToken.create({
                     data: {

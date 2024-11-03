@@ -50,7 +50,7 @@ export default class ServiceController {
     //update service
     public static async updateService(req: express.Request, res: express.Response) {
         const { id } = req.params;
-        const { firstName, lastName, phone, secretCode, CNI_RECTO, CNI_VERSO, photo } = req.body;
+        const { firstName, lastName, phone, secretCode, CNI, photo } = req.body;
         const existingCompte = await prisma.compte.findUnique({
             where: { phone },
         });
@@ -83,8 +83,7 @@ export default class ServiceController {
                 lastName,
                 phone,
                 secretCode: secretCodeHash,
-                CNI_RECTO,
-                CNI_VERSO,
+                CNI, 
                 photo
             }
         });
